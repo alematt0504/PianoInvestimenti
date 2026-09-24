@@ -1,0 +1,3180 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Dashboard interattiva del flusso finanziario mensile">
+  <title>WealthFlow — Flusso Finanziario Mensile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       DESIGN TOKENS
+       ═══════════════════════════════════════════ */
+    :root {
+      --bg-deep: #070913;
+      --bg-card: rgba(16, 22, 38, 0.78);
+      --bg-card-hover: rgba(22, 30, 52, 0.9);
+
+      --glass-border: rgba(255, 255, 255, 0.14);
+      --glass-border-focus: rgba(255, 255, 255, 0.3);
+
+      /* High-vibrancy color palette */
+      --cyan-bright: #00f0ff;
+      --cyan-glow: rgba(0, 240, 255, 0.35);
+
+      --purple-bright: #bf7af0;
+      --purple-glow: rgba(191, 122, 240, 0.35);
+
+      --emerald-bright: #10e797;
+      --emerald-glow: rgba(16, 231, 151, 0.35);
+
+      --amber-bright: #fbbf24;
+      --rose-bright: #fb7185;
+      --blue-bright: #38bdf8;
+      --indigo-bright: #818cf8;
+      --teal-bright: #2dd4bf;
+
+      /* High-contrast donut chart colors */
+      --donut-equity: #00d4ff;
+      --donut-bonds: #ff6bdf;
+      --donut-commodities: #ffb800;
+      --donut-crypto: #00ff88;
+
+      /* High contrast typography */
+      --text-white: #ffffff;
+      --text-sub: #e2e8f0;
+      --text-muted: #94a3b8;
+
+      --radius-xl: 18px;
+      --radius-lg: 14px;
+      --radius-md: 10px;
+
+      /* Semantic z-index scale — never use bare numbers */
+      --z-content: 1;
+      --z-card-face: 2;
+      --z-overlay: 10;
+      --z-sheet: 50;
+    }
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      height: 100%;
+    }
+
+    body {
+      /* min-height, not height: centres short content via the flex rules below,
+         and lets tall content scroll instead of being clipped. dvh so mobile
+         browser chrome appearing/disappearing does not change the box. */
+      min-height: 100vh;
+      min-height: 100dvh;
+      width: 100%;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 24px;
+      position: relative;
+    }
+
+    /* ═══════════════════════════════════════════
+       AMBIENT GLOWS
+       ═══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 650px 400px at 50% 12%, rgba(56, 189, 248, 0.14) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 400px at 15% 85%, rgba(0, 240, 255, 0.1) 0%, transparent 70%),
+        radial-gradient(ellipse 500px 400px at 40% 85%, rgba(191, 122, 240, 0.1) 0%, transparent 70%),
+        radial-gradient(ellipse 600px 400px at 80% 85%, rgba(16, 231, 151, 0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ═══════════════════════════════════════════
+       DASHBOARD CONTAINER
+       ═══════════════════════════════════════════ */
+    .dashboard-container {
+      position: relative;
+      z-index: var(--z-content);
+      width: 100%;
+      max-width: 1180px;
+      /* Belt-and-braces guard. The layout fixes below are the actual solution;
+         this only ensures a future regression degrades to a clipped edge rather
+         than a page-wide horizontal scrollbar. `clip` rather than `hidden` so no
+         scroll container is created. Safe for the Task 6 sheet: this element has
+         no transform/filter/contain, so it is not a containing block for
+         `position: fixed` descendants and the sheet escapes it. */
+      overflow-x: clip;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ═══════════════════════════════════════════
+       GLASS BOX
+       ═══════════════════════════════════════════ */
+    .glass-box {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-box:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--glass-border-focus);
+      transform: translateY(-2px);
+      box-shadow: 0 20px 44px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    /* ═══════════════════════════════════════════
+       SALARY ROOT NODE
+       ═══════════════════════════════════════════ */
+    .salary-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 8px 26px;
+      border-radius: 100px;
+      background: linear-gradient(135deg, rgba(30, 41, 65, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.15);
+    }
+
+    .salary-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+      flex-shrink: 0;
+    }
+
+    .salary-info {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .salary-label {
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #7dd3fc;
+    }
+
+    .salary-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .salary-sub {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════
+       EXTENDED FLOW CONNECTOR (90px height)
+       ═══════════════════════════════════════════ */
+    .connector-box {
+      width: 100%;
+      height: 90px;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      margin: -2px 0 0;
+    }
+
+    .connector-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .flow-line {
+      fill: none;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-dasharray: 7 5;
+      animation: dashMove 1.2s linear infinite;
+    }
+
+    .flow-glow-line {
+      fill: none;
+      stroke-width: 6;
+      stroke-linecap: round;
+      opacity: 0.20;
+      filter: blur(3px);
+    }
+
+    @keyframes dashMove {
+      to {
+        stroke-dashoffset: -28;
+      }
+    }
+
+    /* OVAL MONEY NODES (FLOW BADGES - NO FLUORESCENCE) */
+    .flow-oval-node {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 29px;
+      width: 100%;
+      border-radius: 50px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.86rem;
+      font-weight: 800;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      border: 1.5px solid;
+      white-space: nowrap;
+      user-select: none;
+      transition: all 0.2s ease;
+      letter-spacing: -0.01em;
+    }
+
+    .badge-cyan {
+      background: rgba(8, 51, 68, 0.95);
+      border-color: rgba(0, 240, 255, 0.6);
+      color: #a5f3fc;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .badge-purple {
+      background: rgba(59, 7, 100, 0.95);
+      border-color: rgba(191, 122, 240, 0.6);
+      color: #f3e8ff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .badge-emerald {
+      background: rgba(6, 78, 59, 0.95);
+      border-color: rgba(16, 231, 151, 0.6);
+      color: #a7f3d0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ═══════════════════════════════════════════
+       DESTINATION CARDS GRID
+       ═══════════════════════════════════════════ */
+    .dest-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 2fr;
+      gap: 18px;
+      width: 100%;
+      align-items: stretch;
+      transition: grid-template-columns 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dest-grid.pac-expanded {
+      grid-template-columns: 145px 165px 1fr;
+    }
+
+    .dest-grid.pac-expanded .card,
+    .dest-grid.pac-expanded .card-pac-wrapper,
+    .dest-grid.pac-expanded .card-flip-inner {
+      min-height: 460px;
+    }
+
+    /* Stile compresso card laterali all'espansione del PAC */
+    .dest-grid.pac-expanded .card--isybank,
+    .dest-grid.pac-expanded .card--emergency {
+      padding: 16px 10px 18px;
+      overflow: hidden;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-top,
+    .dest-grid.pac-expanded .card--emergency .card-top {
+      margin-bottom: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-header-left,
+    .dest-grid.pac-expanded .card--emergency .card-header-left {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 5px;
+      width: 100%;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-icon,
+    .dest-grid.pac-expanded .card--emergency .card-icon {
+      width: 32px;
+      height: 32px;
+      font-size: 1.05rem;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-titles,
+    .dest-grid.pac-expanded .card--emergency .card-titles {
+      width: 100%;
+      text-align: center;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-titles h2,
+    .dest-grid.pac-expanded .card--emergency .card-titles h2 {
+      font-size: 0.82rem;
+      white-space: normal;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-titles .subtitle,
+    .dest-grid.pac-expanded .card--emergency .card-titles .subtitle {
+      font-size: 0.60rem;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.2;
+      text-align: center;
+      max-width: 100%;
+      margin-top: 2px;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-body,
+    .dest-grid.pac-expanded .card--emergency .card-body {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .balance-box,
+    .dest-grid.pac-expanded .card--emergency .balance-box {
+      width: 100%;
+      text-align: center;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .big-balance,
+    .dest-grid.pac-expanded .card--emergency .big-balance {
+      font-size: 1.06rem;
+      white-space: nowrap;
+      letter-spacing: -0.02em;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .balance-caption,
+    .dest-grid.pac-expanded .card--emergency .balance-caption {
+      font-size: 0.56rem;
+      line-height: 1.15;
+      white-space: normal;
+    }
+
+    .dest-grid.pac-expanded .card--emergency .yield-pill {
+      font-size: 0.62rem;
+      padding: 3px 6px;
+      gap: 3px;
+      white-space: nowrap;
+      max-width: 100%;
+      margin: 6px auto 0;
+    }
+
+    .dest-grid.pac-expanded .card--emergency .yield-pill svg {
+      width: 11px;
+      height: 11px;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .card-footer,
+    .dest-grid.pac-expanded .card--emergency .card-footer {
+      margin-top: 10px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    .dest-grid.pac-expanded .card--isybank .btn-detail,
+    .dest-grid.pac-expanded .card--emergency .btn-detail {
+      padding: 4px 8px;
+      font-size: 0.60rem;
+      gap: 4px;
+      white-space: nowrap;
+      max-width: 100%;
+    }
+
+    .card {
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      justify-content: space-between;
+      border-top: 3.5px solid transparent;
+      min-height: 410px;
+      position: relative;
+    }
+
+    .card--isybank {
+      border-top-color: var(--cyan-bright);
+    }
+
+    .card--emergency {
+      border-top-color: var(--purple-bright);
+    }
+
+    .card--pac {
+      border-top-color: var(--emerald-bright);
+    }
+
+    /* ═══════════════════════════════════════════
+       CARD OVERLAY (CLICK TO DISPLAY)
+       ═══════════════════════════════════════════ */
+    .card-hover-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(8, 14, 26, 0.94);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(0, 240, 255, 0.4);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(0, 240, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.96);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10;
+    }
+
+    .card-hover-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1);
+      cursor: pointer;
+    }
+
+    .card-hover-overlay--emergency {
+      border-color: rgba(191, 122, 240, 0.45);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(191, 122, 240, 0.12);
+    }
+
+    .card-hover-overlay--pac {
+      border-color: rgba(16, 231, 151, 0.45);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), inset 0 0 24px rgba(16, 231, 151, 0.12);
+    }
+
+
+
+    /* ═══════════════════════════════════════════
+       CARD FOOTER & DETAIL BUTTONS
+       ═══════════════════════════════════════════ */
+    .card-footer {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-top: 14px;
+      z-index: 2;
+    }
+
+    .btn-detail {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 50px;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: none;
+      user-select: none;
+    }
+
+    .btn-detail svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .btn-detail:hover {
+      transform: translateY(-1.5px);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-detail:hover svg {
+      opacity: 1;
+    }
+
+    .btn-detail:active {
+      transform: translateY(0);
+    }
+
+    .btn-detail--cyan {
+      border-color: rgba(0, 240, 255, 0.22);
+      color: rgba(165, 243, 252, 0.8);
+      background: rgba(0, 240, 255, 0.035);
+    }
+
+    .btn-detail--cyan:hover {
+      background: rgba(0, 240, 255, 0.12);
+      border-color: rgba(0, 240, 255, 0.45);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.2);
+    }
+
+    .btn-detail--purple {
+      border-color: rgba(191, 122, 240, 0.22);
+      color: rgba(243, 232, 255, 0.8);
+      background: rgba(191, 122, 240, 0.035);
+    }
+
+    .btn-detail--purple:hover {
+      background: rgba(191, 122, 240, 0.12);
+      border-color: rgba(191, 122, 240, 0.45);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(191, 122, 240, 0.2);
+    }
+
+    .btn-detail--emerald {
+      border-color: rgba(16, 231, 151, 0.22);
+      color: rgba(167, 243, 208, 0.8);
+      background: rgba(16, 231, 151, 0.035);
+    }
+
+    .btn-detail--emerald:hover {
+      background: rgba(16, 231, 151, 0.12);
+      border-color: rgba(16, 231, 151, 0.45);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(16, 231, 151, 0.2);
+    }
+
+    .overlay-bullet--purple {
+      color: var(--purple-bright) !important;
+    }
+
+    .overlay-desc {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      line-height: 1.35;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .overlay-title {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #38bdf8;
+      margin-bottom: 8px;
+    }
+
+    .overlay-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .overlay-list li {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .overlay-bullet {
+      color: var(--cyan-bright);
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    .card-hover-overlay--emergency .overlay-bullet {
+      color: var(--purple-bright);
+    }
+
+    /* Card Top Header with Distinct Divider */
+    .card-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 6px;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      width: 100%;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+    }
+
+    .card-header-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+    }
+
+    .card-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .icon-bank {
+      background: rgba(0, 240, 255, 0.16);
+      border: 1.5px solid rgba(0, 240, 255, 0.4);
+    }
+
+    .icon-emergency {
+      background: rgba(191, 122, 240, 0.16);
+      border: 1.5px solid rgba(191, 122, 240, 0.4);
+    }
+
+    .icon-pac {
+      background: rgba(16, 231, 151, 0.16);
+      border: 1.5px solid rgba(16, 231, 151, 0.4);
+    }
+
+    .card-titles {
+      text-align: center;
+    }
+
+    .card-titles h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .card-titles .subtitle {
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* Card Content Area */
+    .card-body {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    /* Main Balance Block */
+    .balance-box {
+      margin: 4px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    .balance-caption {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .big-balance {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.7rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      text-align: center;
+    }
+
+    .big-balance-cyan {
+      color: #38bdf8;
+      text-shadow: 0 0 24px rgba(56, 189, 248, 0.35);
+    }
+
+    .big-balance-purple {
+      color: #e9d5ff;
+      text-shadow: 0 0 24px rgba(191, 122, 240, 0.35);
+    }
+
+    .big-balance-emerald {
+      color: #10e797;
+      text-shadow: 0 0 24px rgba(16, 231, 151, 0.35);
+    }
+
+    /* ═══════════════════════════════════════════
+       3D FLIP CARD PAC
+       ═══════════════════════════════════════════ */
+    .card-pac-wrapper {
+      perspective: 1200px;
+      width: 100%;
+      height: 100%;
+      min-height: 410px;
+      position: relative;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .card-pac-wrapper:hover {
+      transform: translateY(-2px);
+    }
+
+    .card-flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 410px;
+      transform-style: preserve-3d;
+      transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-flip-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: var(--radius-xl);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-top: 3.5px solid var(--emerald-bright);
+    }
+
+    .card-flip-front {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 22px 20px 24px;
+      z-index: 2;
+      transform: rotateY(0deg);
+    }
+
+    .card-flip-front.glass-box:hover {
+      transform: rotateY(0deg) !important;
+    }
+
+    /* ═══════════════════════════════════════════
+       MODAL BACKDROP (DISABLED - IN-GRID EXPANSION)
+       ═══════════════════════════════════════════ */
+    .modal-backdrop {
+      display: none !important;
+    }
+
+    .card-flip-back {
+      transform: rotateY(180deg);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      padding: 18px 24px;
+      cursor: pointer;
+      z-index: 1;
+      overflow: visible;
+      background: rgba(11, 17, 33, 0.96) !important;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      border-top: 3.5px solid var(--emerald-bright) !important;
+      border-radius: var(--radius-xl);
+      box-sizing: border-box;
+    }
+
+    .card-flip-back.glass-box:hover {
+      transform: rotateY(180deg) !important;
+      background: rgba(11, 17, 33, 0.98) !important;
+    }
+
+    .card-flip-inner.is-flipped .card-flip-front {
+      pointer-events: none;
+    }
+
+    .card-flip-inner:not(.is-flipped) .card-flip-back {
+      pointer-events: none;
+    }
+
+    .pac-clickable-body {
+      cursor: pointer;
+      width: 100%;
+      border-radius: var(--radius-md);
+      padding: 10px 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+    }
+
+    .pac-clickable-body:hover {
+      background: rgba(16, 231, 151, 0.04);
+      border-radius: var(--radius-lg);
+    }
+
+    /* ── MODAL TOP BAR ── */
+    .modal-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .modal-top-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(16, 231, 151, 0.16);
+      border: 1.5px solid rgba(16, 231, 151, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 0 16px var(--emerald-glow);
+    }
+
+    .modal-title-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .modal-subtitle {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+
+    .btn-close-modal {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      border-radius: 50px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-close-modal svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-close-modal:hover {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: rgba(244, 63, 94, 0.55);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
+      transform: translateY(-1.5px);
+    }
+
+    .btn-close-modal:hover svg {
+      transform: rotate(90deg);
+    }
+
+    /* ── MODAL MAIN CONTENT (CENTERED TARGET PORTFOLIO) ── */
+    .modal-main-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .target-portfolio-col {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+
+    .modal-col {
+      display: flex;
+      flex-direction: column;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      min-height: 0;
+      position: relative;
+    }
+
+    /* ── TARGET PORTFOLIO & DONUT (COMPACT FOR IN-CARD DISPLAY) ── */
+    .target-chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .donut-container {
+      position: relative;
+      width: 350px;
+      height: 350px;
+      max-width: 100%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: auto 0;
+      z-index: 2;
+    }
+
+    .donut-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .donut-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.05);
+      stroke-width: 36;
+    }
+
+    .donut-segment {
+      fill: none;
+      stroke-width: 36;
+      stroke-linecap: butt;
+      transition: stroke-width 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+      cursor: pointer;
+    }
+
+    .donut-segment:hover {
+      stroke-width: 42;
+      opacity: 1;
+    }
+
+    .segment-equity {
+      stroke: var(--donut-equity);
+      filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.5));
+    }
+
+    .segment-bonds {
+      stroke: var(--donut-bonds);
+      filter: drop-shadow(0 0 6px rgba(255, 107, 223, 0.5));
+    }
+
+    .segment-commodities {
+      stroke: var(--donut-commodities);
+      filter: drop-shadow(0 0 6px rgba(255, 184, 0, 0.5));
+    }
+
+    .segment-crypto {
+      stroke: var(--donut-crypto);
+      filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.5));
+    }
+
+    /* Percentage labels and names inside donut segments */
+    .donut-pct-name {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 800;
+      fill: #060913;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      user-select: none;
+      letter-spacing: -0.01em;
+      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.35));
+    }
+
+    .donut-pct-label {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-weight: 800;
+      fill: #060913;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+      user-select: none;
+      letter-spacing: -0.03em;
+      filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.3));
+    }
+
+    .donut-pct-symbol {
+      font-size: 0.68em;
+      font-weight: 700;
+      opacity: 0.82;
+      letter-spacing: 0;
+    }
+
+    /* ── DONUT BACK FACE LAYOUT & FIXED DETAIL WINDOW ── */
+    .donut-back-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 1px 0.85fr;
+      align-items: stretch;
+      gap: 24px;
+      width: 100%;
+      height: 100%;
+      min-height: 390px;
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* ── PAC BACK COLUMNS & HEADERS ── */
+    .pac-back-col {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      position: relative;
+    }
+
+    .pac-back-col--left {
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .pac-back-col--right {
+      justify-content: flex-start;
+    }
+
+    .pac-col-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .pac-col-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .pac-header-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+
+    .pac-header-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .pac-header-icon--cyan {
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.28);
+      color: #00d4ff;
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.15);
+    }
+
+    .pac-header-icon--emerald {
+      background: rgba(16, 231, 151, 0.08);
+      border: 1px solid rgba(16, 231, 151, 0.28);
+      color: var(--emerald-bright);
+      box-shadow: 0 0 12px var(--emerald-glow);
+    }
+
+    .pac-col-text-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .pac-col-eyebrow {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.60rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1;
+    }
+
+    .pac-col-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.94rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.015em;
+      margin: 0;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pac-col-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      padding: 3px 9px;
+      border-radius: 50px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .pac-col-tag--cyan {
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid rgba(0, 212, 255, 0.25);
+      color: #67e8f9;
+    }
+
+    .pac-col-tag--emerald {
+      background: rgba(16, 231, 151, 0.08);
+      border: 1px solid rgba(16, 231, 151, 0.25);
+      color: #a7f3d0;
+    }
+
+    /* ── VERTICAL DIVIDER ── */
+    .pac-back-divider {
+      width: 1px;
+      height: 85%;
+      background: linear-gradient(to bottom,
+          transparent 0%,
+          rgba(255, 255, 255, 0.08) 15%,
+          rgba(255, 255, 255, 0.22) 50%,
+          rgba(255, 255, 255, 0.08) 85%,
+          transparent 100%);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.04);
+      align-self: center;
+      justify-self: center;
+    }
+
+    /* ── DEFAULT VIEW: ALTRI INVESTIMENTI ── */
+    .pac-altri-investimenti {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+      flex: 1;
+      min-height: 0;
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .pac-back-col--right:has(.donut-detail-window.visible) .pac-altri-investimenti,
+    .pac-back-col:has(.donut-detail-window.visible) .pac-altri-investimenti {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(4px);
+    }
+
+    /* ── PLACEHOLDER BOXES ── */
+    .pac-placeholder-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .pac-section-total {
+      width: 100%;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .pac-section-total-label {
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .pac-section-total-value {
+      color: #ffffff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.94rem;
+      font-weight: 800;
+    }
+
+    .pac-placeholder-box {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1.5px dashed rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      box-sizing: border-box;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .pac-placeholder-box:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(0, 212, 255, 0.35);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(0, 212, 255, 0.08);
+      transform: translateY(-1.5px);
+    }
+
+    .pac-placeholder-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .pac-placeholder-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 255, 255, 0.6);
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .pac-placeholder-box:hover .pac-placeholder-icon {
+      color: #00d4ff;
+      border-color: rgba(0, 212, 255, 0.3);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .pac-placeholder-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .pac-placeholder-badge {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      color: var(--text-muted);
+    }
+
+    .pac-placeholder-body {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-top: 4px;
+      text-align: left;
+    }
+
+    .pac-placeholder-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      letter-spacing: -0.01em;
+    }
+
+    .pac-placeholder-sub {
+      font-size: 0.66rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    /* Fixed Transparency Window on the left */
+    .donut-detail-window {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 17, 33, 0.98);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1.5px solid rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-lg);
+      padding: 16px 18px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(6px);
+      transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 0.22s ease,
+        box-shadow 0.22s ease;
+      z-index: 10;
+      text-align: left;
+      box-sizing: border-box;
+    }
+
+    .donut-detail-window.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .donut-window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      width: 100%;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .donut-window-title-group {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .donut-window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .donut-window-title {
+      font-size: 0.96rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .donut-window-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .donut-window-desc {
+      font-size: 0.70rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      line-height: 1.35;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+
+    .donut-window-section-content {
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+      min-height: 0;
+    }
+
+    /* Subcards inside window for Azionario */
+    .donut-tooltip-subcards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+      height: 100%;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .donut-window-equity-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .donut-window-bonds-inner,
+    .donut-window-commodities-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .donut-window-bonds-inner .tooltip-subcard,
+    .donut-window-commodities-inner .tooltip-subcard {
+      flex: 0 1 50%;
+      height: auto !important;
+      max-height: 50% !important;
+    }
+
+    .donut-window-bonds-inner>.pac-section-total,
+    .donut-window-commodities-inner>.pac-section-total {
+      margin-top: auto;
+    }
+
+    #window-content-equity .donut-tooltip-subcards {
+      flex: 1;
+      min-height: 0;
+      height: auto;
+    }
+
+    .tooltip-subcard {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      padding: 12px 14px !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: var(--radius-md) !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+      position: relative !important;
+      overflow: hidden !important;
+      text-align: left !important;
+      box-sizing: border-box !important;
+    }
+
+    .tooltip-subcard .pac-subcard-title {
+      font-size: 0.84rem !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+    }
+
+    .tooltip-subcard .pac-subcard-inflow {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.70rem !important;
+      font-weight: 800 !important;
+      padding: 3px 7px !important;
+      border-radius: 50px !important;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+      letter-spacing: 0 !important;
+    }
+
+    .tooltip-subcard .pac-subcard-caption {
+      font-size: 0.60rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      color: var(--text-muted) !important;
+      letter-spacing: 0.04em !important;
+      line-height: 1 !important;
+      margin: 0 !important;
+    }
+
+    .tooltip-subcard .pac-subcard-val {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.8rem !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      line-height: 1 !important;
+      margin: 0 !important;
+    }
+
+    /* Category Detail Card for Bonds & Commodities */
+    .detail-category-card {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      height: 100%;
+      flex: 1;
+      min-height: 0;
+      box-sizing: border-box;
+    }
+
+    .detail-cat-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .detail-cat-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 50px;
+    }
+
+    .badge-bonds {
+      background: rgba(255, 107, 223, 0.15);
+      border: 1px solid rgba(255, 107, 223, 0.4);
+      color: #ff6bdf;
+    }
+
+    .badge-commodities {
+      background: rgba(255, 184, 0, 0.15);
+      border: 1px solid rgba(255, 184, 0, 0.4);
+      color: #ffb800;
+    }
+
+    .detail-cat-rate {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .detail-cat-text {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .detail-cat-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .detail-stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .stat-lbl {
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    .stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .donut-center-info {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      text-align: center;
+      gap: 1px;
+    }
+
+    .donut-center-main {
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      line-height: 1.1;
+    }
+
+    .donut-center-highlight {
+      font-size: 1.22rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #38bdf8;
+      text-shadow: none;
+      line-height: 1.1;
+    }
+
+    /* ── CALLOUT BADGES AROUND THE DONUT ── */
+    .chart-callout {
+      display: none !important;
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .callout-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-cyan {
+      background: var(--cyan-bright);
+      box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    .dot-purple {
+      background: var(--purple-bright);
+      box-shadow: 0 0 8px var(--purple-glow);
+    }
+
+    .dot-amber {
+      background: var(--amber-bright);
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+    }
+
+    .dot-emerald {
+      background: var(--emerald-bright);
+      box-shadow: 0 0 8px var(--emerald-glow);
+    }
+
+    .callout-title {
+      font-size: 0.80rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+
+    .callout-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.80rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 50px;
+      margin-left: auto;
+      line-height: 1.1;
+    }
+
+    .pct-cyan {
+      background: rgba(0, 240, 255, 0.16);
+      color: #38bdf8;
+      border: 1px solid rgba(0, 240, 255, 0.45);
+    }
+
+    .pct-purple {
+      background: rgba(191, 122, 240, 0.16);
+      color: #e9d5ff;
+      border: 1px solid rgba(191, 122, 240, 0.45);
+    }
+
+    .pct-amber {
+      background: rgba(251, 191, 36, 0.16);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+    }
+
+    .pct-emerald {
+      background: rgba(16, 231, 151, 0.16);
+      color: #a7f3d0;
+      border: 1px solid rgba(16, 231, 151, 0.45);
+    }
+
+    .callout-desc {
+      font-size: 0.63rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-left: 16px;
+    }
+
+    /* Positioning of the 4 callouts around the donut */
+    .callout-crypto {
+      top: 24px;
+      left: 14px;
+      border-right: 3px solid var(--emerald-bright);
+    }
+
+    .callout-crypto:hover {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(255, 255, 255, 0.28);
+      border-right-color: var(--emerald-bright);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(16, 231, 151, 0.25);
+    }
+
+    .callout-commodities {
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      border-right: 3px solid var(--amber-bright);
+    }
+
+    .callout-commodities:hover {
+      transform: translateY(calc(-50% - 2px)) scale(1.02);
+      border-color: rgba(255, 255, 255, 0.28);
+      border-right-color: var(--amber-bright);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(251, 191, 36, 0.25);
+    }
+
+    .callout-bonds {
+      bottom: 24px;
+      left: 14px;
+      border-right: 3px solid var(--purple-bright);
+    }
+
+    .callout-bonds:hover {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(255, 255, 255, 0.28);
+      border-right-color: var(--purple-bright);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(191, 122, 240, 0.25);
+    }
+
+    .callout-equity {
+      top: 50%;
+      right: 12px;
+      transform: translateY(-50%);
+      border-left: 3px solid var(--cyan-bright);
+    }
+
+    .callout-equity:hover {
+      transform: translateY(calc(-50% - 2px)) scale(1.02);
+      border-color: rgba(255, 255, 255, 0.28);
+      border-left-color: var(--cyan-bright);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(0, 240, 255, 0.25);
+    }
+
+    /* Glowing connector lines pointing directly towards the respective slice */
+    .callout-crypto::after {
+      content: '';
+      position: absolute;
+      right: -16px;
+      top: 55%;
+      width: 16px;
+      height: 1.5px;
+      background: linear-gradient(90deg, var(--emerald-bright), transparent);
+    }
+
+    .callout-commodities::after {
+      content: '';
+      position: absolute;
+      right: -16px;
+      top: 50%;
+      width: 16px;
+      height: 1.5px;
+      background: linear-gradient(90deg, var(--amber-bright), transparent);
+    }
+
+    .callout-bonds::after {
+      content: '';
+      position: absolute;
+      right: -16px;
+      top: 45%;
+      width: 16px;
+      height: 1.5px;
+      background: linear-gradient(90deg, var(--purple-bright), transparent);
+    }
+
+    .callout-equity::before {
+      content: '';
+      position: absolute;
+      left: -16px;
+      top: 50%;
+      width: 16px;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, var(--cyan-bright));
+    }
+
+    /* ── RIGHT COLUMN: PAC GRID ── */
+    .pac-back-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      box-sizing: border-box;
+      align-content: stretch;
+      margin: 0;
+      flex: 1;
+    }
+
+    .pac-subcard--full {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 100px !important;
+      max-height: none !important;
+      box-sizing: border-box !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      align-items: stretch !important;
+      padding: 12px 14px !important;
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.09) !important;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+      border-radius: 12px !important;
+      position: relative !important;
+      overflow: hidden !important;
+      transition: all 0.2s ease !important;
+      text-align: left !important;
+    }
+
+    .pac-subcard--full:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-color: rgba(255, 255, 255, 0.22) !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .subcard-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      line-height: 1 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    .subcard-row--top {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+      width: 100% !important;
+    }
+
+    .subcard-row--bottom {
+      align-items: baseline !important;
+    }
+
+    /* Subcard Title Group & Asset Icons */
+    .pac-subcard-title-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .pac-asset-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pac-subcard:hover .pac-asset-icon {
+      transform: scale(1.08);
+    }
+
+    .pac-asset-icon--btc {
+      background: rgba(129, 140, 248, 0.14);
+      border: 1px solid rgba(129, 140, 248, 0.38);
+      color: #a5b4fc;
+      box-shadow: 0 0 8px rgba(129, 140, 248, 0.2);
+    }
+
+    .pac-subcard:hover .pac-asset-icon--btc {
+      border-color: rgba(129, 140, 248, 0.65);
+      box-shadow: 0 0 12px rgba(129, 140, 248, 0.35);
+    }
+
+    .pac-asset-icon--bnb {
+      background: rgba(45, 212, 191, 0.12);
+      border: 1px solid rgba(45, 212, 191, 0.35);
+      color: #2dd4bf;
+      box-shadow: 0 0 8px rgba(45, 212, 191, 0.15);
+    }
+
+    .pac-subcard:hover .pac-asset-icon--bnb {
+      border-color: rgba(45, 212, 191, 0.6);
+      box-shadow: 0 0 12px rgba(45, 212, 191, 0.28);
+    }
+
+    .pac-asset-icon svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .pac-subcard--full .pac-subcard-title {
+      font-size: 0.88rem !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      letter-spacing: -0.01em !important;
+      line-height: 1.15 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+      white-space: normal !important;
+    }
+
+    .pac-subcard--full .pac-subcard-inflow {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.74rem !important;
+      font-weight: 800 !important;
+      padding: 2.5px 8px !important;
+      border-radius: 50px !important;
+      line-height: 1.2 !important;
+      margin: 0 !important;
+      letter-spacing: 0 !important;
+      white-space: nowrap !important;
+    }
+
+    .pac-subcard--full .pac-subcard-caption {
+      font-size: 0.64rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      color: var(--text-muted) !important;
+      letter-spacing: 0.04em !important;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: left !important;
+    }
+
+    .pac-subcard--full .pac-subcard-val {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.9rem !important;
+      font-weight: 800 !important;
+      color: #ffffff !important;
+      line-height: 1.1 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      text-align: right !important;
+    }
+
+
+
+    /* Return Yield Pill */
+    .yield-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 800;
+      background: rgba(16, 231, 151, 0.16);
+      border: 1px solid rgba(16, 231, 151, 0.45);
+      color: #34d399;
+      margin: 12px auto 0;
+      box-shadow: 0 0 14px rgba(16, 231, 151, 0.15);
+    }
+
+    .yield-pill svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    /* ═══════════════════════════════════════════
+       PAC HORIZONTAL SUB-BOXES
+       ═══════════════════════════════════════════ */
+    .pac-horizontal-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+
+    .pac-subcard {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .pac-subcard:hover {
+      background: rgba(255, 255, 255, 0.075);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .pac-subcard::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3.5px;
+    }
+
+    .pac-subcard--sp500::before {
+      background: var(--blue-bright);
+    }
+
+    .pac-subcard--msci::before {
+      background: var(--amber-bright);
+    }
+
+    .pac-subcard--asia::before {
+      background: var(--purple-bright);
+    }
+
+    .pac-subcard--world::before {
+      background: var(--cyan-bright);
+    }
+
+    .pac-subcard--europe::before {
+      background: #10e797;
+    }
+
+    .pac-subcard--altro::before {
+      background: var(--rose-bright);
+    }
+
+    .pac-subcard--asset1::before {
+      background: var(--indigo-bright);
+    }
+
+    .pac-subcard--asset2::before {
+      background: var(--teal-bright);
+    }
+
+    .pac-subcard--emerging::before {
+      background: var(--teal-bright);
+    }
+
+    .pac-subcard--bonds::before {
+      background: var(--donut-bonds);
+    }
+
+    .pac-subcard--commodities::before {
+      background: var(--amber-bright);
+    }
+
+    .pac-inflow--bonds {
+      background: rgba(255, 107, 223, 0.22);
+      color: #ff6bdf;
+      border: 1.5px solid rgba(255, 107, 223, 0.6);
+      box-shadow: 0 0 14px rgba(255, 107, 223, 0.25);
+    }
+
+    .pac-inflow--commodities {
+      background: rgba(251, 191, 36, 0.22);
+      color: #fbbf24;
+      border: 1.5px solid rgba(251, 191, 36, 0.6);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.25);
+    }
+
+    .pac-inflow--emerging {
+      background: rgba(45, 212, 191, 0.22);
+      color: #99f6e4;
+      border: 1.5px solid rgba(45, 212, 191, 0.6);
+      box-shadow: 0 0 14px rgba(45, 212, 191, 0.25);
+    }
+
+    .pac-subcard-title {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    .pac-subcard-inflow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 50px;
+      margin-bottom: 10px;
+      text-align: center;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pac-inflow--sp500 {
+      background: rgba(14, 165, 233, 0.22);
+      color: #38bdf8;
+      border: 1.5px solid rgba(56, 189, 248, 0.6);
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+    }
+
+    .pac-inflow--msci {
+      background: rgba(245, 158, 11, 0.22);
+      color: #fbbf24;
+      border: 1.5px solid rgba(251, 191, 36, 0.6);
+      box-shadow: 0 0 14px rgba(251, 191, 36, 0.25);
+    }
+
+    .pac-inflow--asia {
+      background: rgba(191, 122, 240, 0.22);
+      color: #e9d5ff;
+      border: 1.5px solid rgba(191, 122, 240, 0.6);
+      box-shadow: 0 0 14px rgba(191, 122, 240, 0.25);
+    }
+
+    .pac-inflow--world {
+      background: rgba(0, 240, 255, 0.2);
+      color: #a5f3fc;
+      border: 1.5px solid rgba(0, 240, 255, 0.55);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.22);
+    }
+
+    .pac-inflow--europe {
+      background: rgba(16, 231, 151, 0.2);
+      color: #a7f3d0;
+      border: 1.5px solid rgba(16, 231, 151, 0.55);
+      box-shadow: 0 0 14px rgba(16, 231, 151, 0.22);
+    }
+
+    .pac-inflow--altro {
+      background: rgba(244, 63, 94, 0.22);
+      color: #fb7185;
+      border: 1.5px solid rgba(251, 113, 133, 0.6);
+      box-shadow: 0 0 14px rgba(251, 113, 133, 0.25);
+    }
+
+    .pac-inflow--asset1 {
+      background: rgba(129, 140, 248, 0.22);
+      color: #c7d2fe;
+      border: 1.5px solid rgba(129, 140, 248, 0.6);
+      box-shadow: 0 0 14px rgba(129, 140, 248, 0.25);
+    }
+
+    .pac-inflow--asset2 {
+      background: rgba(45, 212, 191, 0.22);
+      color: #99f6e4;
+      border: 1.5px solid rgba(45, 212, 191, 0.6);
+      box-shadow: 0 0 14px rgba(45, 212, 191, 0.25);
+    }
+
+    .pac-subcard-caption {
+      font-size: 0.66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+      text-align: center;
+    }
+
+    .pac-subcard-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #ffffff;
+      text-align: center;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════ */
+    @media (max-width: 960px) {
+
+      body {
+        padding: 20px 12px;
+      }
+
+      .dest-grid,
+      .dest-grid.pac-expanded {
+        grid-template-columns: 1fr;
+        max-width: 480px;
+        gap: 16px;
+      }
+
+      .connector-box {
+        display: none;
+      }
+
+      .pac-horizontal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      body.pac-modal-open .card-pac-wrapper {
+        width: 96vw !important;
+        height: 94vh !important;
+        min-height: auto !important;
+        max-height: 94vh !important;
+      }
+
+      .card-flip-back {
+        overflow-y: auto !important;
+        padding: 16px 14px !important;
+      }
+
+      .modal-main-content {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .target-chart-wrapper {
+        min-height: auto;
+        padding: 20px 0;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .donut-back-layout {
+        flex-direction: column;
+        gap: 20px;
+        height: auto;
+      }
+
+      .pac-back-divider {
+        display: none;
+      }
+
+      .pac-back-col--left,
+      .pac-back-col--right {
+        width: 100%;
+        max-width: 380px;
+        height: auto;
+      }
+
+      .pac-altri-investimenti {
+        height: auto;
+      }
+
+      .pac-placeholder-grid {
+        gap: 10px;
+      }
+
+      .pac-placeholder-box {
+        min-height: 90px;
+      }
+
+      .donut-container {
+        width: 294px;
+        height: 294px;
+      }
+
+      .donut-detail-window {
+        position: relative;
+        inset: auto;
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+        min-height: 280px;
+      }
+
+      #window-content-bonds,
+      #window-content-commodities {
+        flex: 0 0 180px;
+        height: 180px;
+      }
+
+      .chart-callout {
+        position: static;
+        transform: none !important;
+        width: 100%;
+      }
+
+      .chart-callout::before,
+      .chart-callout::after {
+        display: none;
+      }
+
+      .pac-back-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ═══ MODAL BACKDROP FOR PAC TAKEOVER ═══ -->
+  <div class="modal-backdrop" id="pac-modal-backdrop" onclick="closePacModal(event)"></div>
+
+  <div class="dashboard-container">
+
+    <!-- ═══ SALARY ROOT ═══ -->
+    <div class="salary-card glass-box">
+      <div class="salary-icon">💰</div>
+      <div class="salary-info">
+        <span class="salary-label">Stipendio Mensile</span>
+        <span class="salary-value">~1.970 €</span>
+        <span class="salary-sub">Netto in busta paga</span>
+      </div>
+    </div>
+
+    <!-- ═══ EXTENDED FLOW CONNECTOR WITH SEPARATE TOP BRANCHES & BOTTOM ARROWS ═══ -->
+    <div class="connector-box">
+      <svg viewBox="0 0 1000 90" class="connector-svg" preserveAspectRatio="none">
+        <defs>
+          <marker id="arrow-cyan" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--cyan-bright)" />
+          </marker>
+          <marker id="arrow-purple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--purple-bright)" />
+          </marker>
+          <marker id="arrow-emerald" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto-start-reverse">
+            <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--emerald-bright)" />
+          </marker>
+        </defs>
+
+        <!-- ── UPPER BRANCHES (Salary Card -> Top of Ovals) ── -->
+        <!-- Glows -->
+        <path id="flow-glow-upper-1" d="M 500 0 C 500 24, 125 12, 125 30" class="flow-glow-line"
+          stroke="var(--cyan-bright)" />
+        <path id="flow-glow-upper-2" d="M 500 0 C 500 24, 375 12, 375 30" class="flow-glow-line"
+          stroke="var(--purple-bright)" />
+        <path id="flow-glow-upper-3" d="M 500 0 C 500 24, 750 12, 750 30" class="flow-glow-line"
+          stroke="var(--emerald-bright)" />
+
+        <!-- Upper Flow lines -->
+        <path id="flow-line-upper-1" d="M 500 0 C 500 24, 125 12, 125 30" class="flow-line"
+          stroke="var(--cyan-bright)" />
+        <path id="flow-line-upper-2" d="M 500 0 C 500 24, 375 12, 375 30" class="flow-line"
+          stroke="var(--purple-bright)" />
+        <path id="flow-line-upper-3" d="M 500 0 C 500 24, 750 12, 750 30" class="flow-line"
+          stroke="var(--emerald-bright)" />
+
+        <!-- ── LOWER ARROWS (Bottom of Ovals -> Target Cards) ── -->
+        <!-- Glows -->
+        <path id="flow-glow-lower-1" d="M 125 60 L 125 84" class="flow-glow-line" stroke="var(--cyan-bright)" />
+        <path id="flow-glow-lower-2" d="M 375 60 L 375 84" class="flow-glow-line" stroke="var(--purple-bright)" />
+        <path id="flow-glow-lower-3" d="M 750 60 L 750 84" class="flow-glow-line" stroke="var(--emerald-bright)" />
+
+        <!-- Lower Arrow lines with sharp arrowheads -->
+        <path id="flow-line-lower-1" d="M 125 60 L 125 84" class="flow-line" stroke="var(--cyan-bright)"
+          marker-end="url(#arrow-cyan)" />
+        <path id="flow-line-lower-2" d="M 375 60 L 375 84" class="flow-line" stroke="var(--purple-bright)"
+          marker-end="url(#arrow-purple)" />
+        <path id="flow-line-lower-3" d="M 750 60 L 750 84" class="flow-line" stroke="var(--emerald-bright)"
+          marker-end="url(#arrow-emerald)" />
+
+        <!-- ── OVAL MONEY NODES ── -->
+        <!-- Left Oval: ~770 € (Centered at X=125, Y=44.5) -->
+        <foreignObject id="flow-oval-1" x="70" y="30" width="110" height="29">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="flow-oval-node badge-cyan">
+            ~770 €
+          </div>
+        </foreignObject>
+
+        <!-- Center Oval: 700 € (Centered at X=375, Y=44.5) -->
+        <foreignObject id="flow-oval-2" x="325" y="30" width="100" height="29">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="flow-oval-node badge-purple">
+            700 €
+          </div>
+        </foreignObject>
+
+        <!-- Right Oval: 500 € (Centered at X=750, Y=44.5) -->
+        <foreignObject id="flow-oval-3" x="700" y="30" width="100" height="29">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="flow-oval-node badge-emerald">
+            500 €
+          </div>
+        </foreignObject>
+      </svg>
+    </div>
+
+    <!-- ═══ DESTINATION CARDS ═══ -->
+    <div class="dest-grid">
+
+      <!-- ── CARD 1: CONTO ISYBANK ── -->
+      <div class="glass-box card card--isybank">
+        <!-- Glassmorphism Overlay (Click anywhere on it to close) -->
+        <div class="card-hover-overlay" id="overlay-isybank" onclick="closeOverlay('overlay-isybank', event)">
+          <p class="overlay-desc">Spese non pianificate, contenute e frequenti</p>
+          <div class="overlay-title">TIPOLOGIA SPESE:</div>
+          <ul class="overlay-list">
+            <li><span class="overlay-bullet">•</span> Viaggi</li>
+            <li><span class="overlay-bullet">•</span> Cene</li>
+            <li><span class="overlay-bullet">•</span> Benzina</li>
+          </ul>
+        </div>
+
+        <div class="card-top">
+          <div class="card-header-left">
+            <div class="card-icon icon-bank">🏦</div>
+            <div class="card-titles">
+              <h2>Conto Corrente</h2>
+              <div class="subtitle">Isybank</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="balance-box">
+            <div class="balance-caption">Saldo Disponibile</div>
+            <div class="big-balance big-balance-cyan">~500–5.000 €</div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button type="button" class="btn-detail btn-detail--cyan" onclick="toggleOverlay('overlay-isybank', event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>Quando Usarli?</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── CARD 2: FONDO EMERGENZA ── -->
+      <div class="glass-box card card--emergency">
+        <!-- Glassmorphism Overlay (Click anywhere on it to close) -->
+        <div class="card-hover-overlay card-hover-overlay--emergency" id="overlay-emergency"
+          onclick="closeOverlay('overlay-emergency', event)">
+          <p class="overlay-desc" style="color: #f3e8ff; margin-bottom: 12px;">Prelevare raramente, solo per emergenze o
+            spese medio-grandi pianificate</p>
+          <div class="overlay-title" style="color: var(--purple-bright);">TIPOLOGIA SPESE:</div>
+          <ul class="overlay-list">
+            <li><span class="overlay-bullet" style="color: var(--purple-bright);">•</span> Emergenza</li>
+            <li><span class="overlay-bullet" style="color: var(--purple-bright);">•</span> Anticipo Mutuo</li>
+            <li><span class="overlay-bullet" style="color: var(--purple-bright);">•</span> Auto</li>
+            <li><span class="overlay-bullet" style="color: var(--purple-bright);">•</span> B&B</li>
+          </ul>
+        </div>
+
+        <div class="card-top">
+          <div class="card-header-left">
+            <div class="card-icon icon-emergency">🛡️</div>
+            <div class="card-titles">
+              <h2>Fondo Emergenza</h2>
+              <div class="subtitle">Conto Deposito Trade Republic</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="balance-box">
+            <div class="balance-caption">Capitale Accantonato</div>
+            <div class="big-balance big-balance-purple">~ 10.000 €</div>
+          </div>
+
+          <div class="yield-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
+            +3% Lordo Annuo
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button type="button" class="btn-detail btn-detail--purple"
+            onclick="toggleOverlay('overlay-emergency', event)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="16" x2="12" y2="12" />
+              <line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+            <span>Quando Usarli?</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ── CARD 3: PAC (3D FLIP CARD) ── -->
+      <div class="card-pac-wrapper">
+        <div class="card-flip-inner" id="pac-card-inner">
+
+          <!-- FRONT FACE -->
+          <div class="glass-box card-face card-flip-front">
+            <!-- Glassmorphism Overlay (Click anywhere on it to close) -->
+            <div class="card-hover-overlay card-hover-overlay--pac" id="overlay-pac"
+              onclick="closeOverlay('overlay-pac', event)">
+              <p class="overlay-desc" style="color: #d1fae5; margin-bottom: 12px;">Orizzonte 10-20 anni, Disinvestire
+                solo
+                in caso di grande emergenza o necessità ben pianificata di grandi somme.</p>
+              <div class="overlay-title" style="color: var(--emerald-bright);">TIPOLOGIA SPESE:</div>
+              <ul class="overlay-list">
+                <li><span class="overlay-bullet" style="color: var(--emerald-bright);">•</span> Grande Emergenza</li>
+                <li><span class="overlay-bullet" style="color: var(--emerald-bright);">•</span> Acquisto Casa</li>
+                <li><span class="overlay-bullet" style="color: var(--emerald-bright);">•</span> Matrimonio</li>
+              </ul>
+            </div>
+
+            <div class="card-top">
+              <div class="card-header-left">
+                <div class="card-icon icon-pac">📈</div>
+                <div class="card-titles">
+                  <h2>Investimenti</h2>
+                  <div class="subtitle">PIC & PAC</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body pac-clickable-body" onclick="togglePacFlip(event)" title="Clicca per girare la card">
+              <div class="balance-box">
+                <div class="balance-caption">Capitale Investito</div>
+                <div class="big-balance big-balance-emerald">8.500 €</div>
+              </div>
+
+              <div class="yield-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                  <polyline points="17 6 23 6 23 12" />
+                </svg>
+                ~ +10% Lordo Annuo
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <button type="button" class="btn-detail btn-detail--emerald"
+                onclick="toggleOverlay('overlay-pac', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <span>Quando Usarli?</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- BACK FACE -->
+          <div class="glass-box card-face card-flip-back" onclick="closePacModal(event)"
+            title="Clicca per tornare al riepilogo">
+            <div class="donut-back-layout">
+              <!-- LEFT COLUMN: "PORTAFOGLIO INVESTIMENTI" -->
+              <div class="pac-back-col pac-back-col--left">
+
+                <h3 class="pac-col-title">Portafoglio Investimenti</h3>
+
+
+                <!-- LARGE DONUT CHART -->
+                <div class="donut-container" id="donut-chart-container">
+                  <svg viewBox="0 0 240 240" class="donut-svg">
+                    <!-- Rotated Segments Group (-120deg around center 120, 120) -->
+                    <g transform="rotate(-120 120 120)">
+                      <!-- Background Track -->
+                      <circle cx="120" cy="120" r="82" class="donut-track" />
+
+                      <!-- 75% Azionario (Starts at 11:00, sweeps 270° to 8:00) -->
+                      <circle cx="120" cy="120" r="82" class="donut-segment segment-equity"
+                        stroke-dasharray="386.42 515.22" stroke-dashoffset="0" data-segment="equity" />
+
+                      <!-- 15% Obbligazioni (Starts at 8:00, sweeps 54° to 9:48) -->
+                      <circle cx="120" cy="120" r="82" class="donut-segment segment-bonds"
+                        stroke-dasharray="77.28 515.22" stroke-dashoffset="-386.42" data-segment="bonds" />
+
+                      <!-- 10% Materie prime (Starts at 9:48, sweeps 36° to 11:00) -->
+                      <circle cx="120" cy="120" r="82" class="donut-segment segment-commodities"
+                        stroke-dasharray="51.52 515.22" stroke-dashoffset="-463.70" data-segment="commodities" />
+                    </g>
+
+                    <!-- Labels and Percentages inside their respective sections -->
+                    <!-- 75% Azioni (midpoint: 15° / right side) -->
+                    <text x="200" y="131" class="donut-pct-name" style="font-size: 8.5px;">Azioni</text>
+                    <text x="197" y="149" class="donut-pct-label" style="font-size: 13.5px;">75<tspan
+                        class="donut-pct-symbol">%</tspan></text>
+
+                    <!-- 15% Obbligazioni (midpoint: 177° / mid-left) -->
+                    <text x="38" y="115" class="donut-pct-name" style="font-size: 7px;">Obbligaz.</text>
+                    <text x="39" y="132" class="donut-pct-label" style="font-size: 12px;">15<tspan
+                        class="donut-pct-symbol">%</tspan></text>
+
+                    <!-- 10% Commodities (midpoint: 222° / top-left) -->
+                    <text x="61" y="58" class="donut-pct-name" style="font-size: 6.8px;">Commodit.</text>
+                    <text x="57" y="72" class="donut-pct-label" style="font-size: 11.5px;">10<tspan
+                        class="donut-pct-symbol">%</tspan></text>
+                  </svg>
+
+                  <!-- Center Info -->
+                  <div class="donut-center-info">
+                    <span class="donut-center-main">ALLOCAZIONE</span>
+                    <span class="donut-center-highlight">TARGET</span>
+                  </div>
+                </div>
+
+                <div class="pac-section-total">
+                  <span class="pac-section-total-label">Totale</span>
+                  <span class="pac-section-total-value">5.000 €</span>
+                </div>
+              </div>
+
+              <!-- VERTICAL DIVIDER -->
+              <div class="pac-back-divider"></div>
+
+              <!-- RIGHT COLUMN: "ALTRI INVESTIMENTI" & HOVER DETAIL WINDOW -->
+              <div class="pac-back-col pac-back-col--right">
+                <!-- Default State: Altri Investimenti with 2 placeholder boxes -->
+                <div class="pac-altri-investimenti" id="pac-altri-investimenti">
+                  <div class="pac-col-header">
+                    <h3 class="pac-col-title">Altri investimenti</h3>
+                  </div>
+
+                  <div class="pac-placeholder-grid">
+                    <div class="pac-subcard pac-subcard--full pac-subcard--asset1">
+                      <div class="subcard-row subcard-row--top">
+                        <div class="pac-subcard-title-group">
+                          <span class="pac-asset-icon pac-asset-icon--btc" title="Bitcoin">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round">
+                              <path d="M7 6h7a3 3 0 0 1 0 6H7" />
+                              <path d="M7 12h8a3 3 0 0 1 0 6H7" />
+                              <line x1="10" y1="3" x2="10" y2="6" />
+                              <line x1="10" y1="18" x2="10" y2="21" />
+                              <line x1="13" y1="3" x2="13" y2="6" />
+                              <line x1="13" y1="18" x2="13" y2="21" />
+                              <line x1="7" y1="6" x2="7" y2="18" />
+                            </svg>
+                          </span>
+                          <span class="pac-subcard-title">Trading Bitcoin</span>
+                        </div>
+                        <span class="pac-subcard-inflow pac-inflow--asset1">Obiettivo Ott 2029</span>
+                      </div>
+                      <div class="subcard-row subcard-row--bottom">
+                        <span class="pac-subcard-caption">Già investiti</span>
+                        <span class="pac-subcard-val">3.500 €</span>
+                      </div>
+                    </div>
+
+                    <div class="pac-subcard pac-subcard--full pac-subcard--asset2">
+                      <div class="subcard-row subcard-row--top">
+                        <div class="pac-subcard-title-group">
+                          <span class="pac-asset-icon pac-asset-icon--bnb" title="Ristrutturazione B&amp;B">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round">
+                              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                              <polyline points="9 22 9 12 15 12 15 22" />
+                            </svg>
+                          </span>
+                          <span class="pac-subcard-title">Ristrutturazione B&amp;B</span>
+                        </div>
+                        <span class="pac-subcard-inflow pac-inflow--asset2">Obiettivo Mag 2027</span>
+                      </div>
+                      <div class="subcard-row subcard-row--bottom">
+                        <span class="pac-subcard-caption">Già investiti</span>
+                        <span class="pac-subcard-val">0 €</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pac-section-total">
+                    <span class="pac-section-total-label">Totale</span>
+                    <span class="pac-section-total-value">3.500 €</span>
+                  </div>
+                </div>
+
+                <!-- Hover State: Segment Detail Window (overlaps smoothly when visible) -->
+                <div class="donut-detail-window" id="donut-detail-window">
+                  <div class="donut-window-header">
+                    <div class="donut-window-title-group">
+                      <span class="donut-window-dot" id="window-dot"></span>
+                      <div class="pac-col-text-wrapper">
+                        <span class="donut-window-title" id="window-title">Azionario</span>
+                      </div>
+                    </div>
+                    <span class="donut-window-pct" id="window-pct">75%</span>
+                  </div>
+                  <div class="donut-window-desc" id="window-desc">Alti rendimenti ma alta volatilità</div>
+
+                  <!-- Content for 75% Azionario (4 subcards) -->
+                  <div class="donut-window-section-content" id="window-content-equity">
+                    <div class="donut-window-equity-inner">
+                      <div class="donut-tooltip-subcards" id="tooltip-subcards">
+                        <div class="pac-subcard pac-subcard--sp500 tooltip-subcard">
+                          <div class="subcard-row subcard-row--top">
+                            <span class="pac-subcard-title">S&amp;P 500</span>
+                            <span class="pac-subcard-inflow pac-inflow--sp500">+200 €/m</span>
+                          </div>
+                          <div class="subcard-row subcard-row--bottom">
+                            <span class="pac-subcard-caption">Già Investiti</span>
+                            <span class="pac-subcard-val">2.000 €</span>
+                          </div>
+                        </div>
+
+                        <div class="pac-subcard pac-subcard--msci tooltip-subcard">
+                          <div class="subcard-row subcard-row--top">
+                            <span class="pac-subcard-title">MSCI World</span>
+                            <span class="pac-subcard-inflow pac-inflow--msci">+200 €/m</span>
+                          </div>
+                          <div class="subcard-row subcard-row--bottom">
+                            <span class="pac-subcard-caption">Già Investiti</span>
+                            <span class="pac-subcard-val" style="color: #cbd5e1;">2000 €</span>
+                          </div>
+                        </div>
+
+
+                        <div class="pac-subcard pac-subcard--emerging tooltip-subcard">
+                          <div class="subcard-row subcard-row--top">
+                            <span class="pac-subcard-title">MSCI Emerging</span>
+                            <span class="pac-subcard-inflow pac-inflow--emerging">+100 €/m</span>
+                          </div>
+                          <div class="subcard-row subcard-row--bottom">
+                            <span class="pac-subcard-caption">Già Investiti</span>
+                            <span class="pac-subcard-val" style="color: #cbd5e1;">1000 €</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="pac-section-total">
+                        <span class="pac-section-total-label">Totale</span>
+                        <span class="pac-section-total-value">2.000 €</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="donut-window-section-content" id="window-content-bonds" style="display: none;">
+                    <div class="donut-window-bonds-inner">
+                      <div class="pac-subcard pac-subcard--bonds tooltip-subcard">
+                        <div class="subcard-row subcard-row--top">
+                          <span class="pac-subcard-title">(?)</span>
+                          <span class="pac-subcard-inflow pac-inflow--bonds">+0 €/m</span>
+                        </div>
+                        <div class="subcard-row subcard-row--bottom">
+                          <span class="pac-subcard-caption">Già Investiti</span>
+                          <span class="pac-subcard-val">0 €</span>
+                        </div>
+                      </div>
+                      <div class="pac-section-total">
+                        <span class="pac-section-total-label">Totale</span>
+                        <span class="pac-section-total-value">0 €</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="donut-window-section-content" id="window-content-commodities" style="display: none;">
+                    <div class="donut-window-commodities-inner">
+                      <div class="pac-subcard pac-subcard--commodities tooltip-subcard">
+                        <div class="subcard-row subcard-row--top">
+                          <span class="pac-subcard-title">(?)</span>
+                          <span class="pac-subcard-inflow pac-inflow--commodities">+0 €/m</span>
+                        </div>
+                        <div class="subcard-row subcard-row--bottom">
+                          <span class="pac-subcard-caption">Già Investiti</span>
+                          <span class="pac-subcard-val">0 €</span>
+                        </div>
+                      </div>
+                      <div class="pac-section-total">
+                        <span class="pac-section-total-label">Totale</span>
+                        <span class="pac-section-total-value">0 €</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ═══ OVERLAY & PAC MODAL TAKEOVER SCRIPT ═══ -->
+  <script>
+    function toggleOverlay(id, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      const target = document.getElementById(id);
+      if (!target) return;
+      const isAlreadyActive = target.classList.contains('active');
+
+      // Close all active overlays
+      document.querySelectorAll('.card-hover-overlay').forEach(el => {
+        el.classList.remove('active');
+      });
+
+      // Toggle current overlay
+      if (!isAlreadyActive) {
+        target.classList.add('active');
+      }
+    }
+
+    function closeOverlay(id, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      const target = document.getElementById(id);
+      if (target) {
+        target.classList.remove('active');
+      }
+    }
+
+    function togglePacFlip(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      const inner = document.getElementById('pac-card-inner');
+      if (inner && inner.classList.contains('is-flipped')) {
+        closePacModal(event);
+      } else {
+        openPacModal(event);
+      }
+    }
+
+    function openPacModal(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      // Chiudi eventuali overlay aperti
+      document.querySelectorAll('.card-hover-overlay.active').forEach(el => {
+        el.classList.remove('active');
+      });
+
+      const inner = document.getElementById('pac-card-inner');
+      if (inner) {
+        inner.classList.add('is-flipped');
+      }
+      const grid = document.querySelector('.dest-grid');
+      if (grid) {
+        grid.classList.add('pac-expanded');
+      }
+      animateConnector();
+    }
+
+    function closePacModal(event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      const inner = document.getElementById('pac-card-inner');
+      if (inner) {
+        inner.classList.remove('is-flipped');
+      }
+      const grid = document.querySelector('.dest-grid');
+      if (grid) {
+        grid.classList.remove('pac-expanded');
+      }
+      const win = document.getElementById('donut-detail-window');
+      if (win) {
+        win.classList.remove('visible');
+      }
+      const altriInv = document.getElementById('pac-altri-investimenti');
+      if (altriInv) {
+        altriInv.style.opacity = '1';
+        altriInv.style.pointerEvents = 'auto';
+      }
+      if (detailHideTimer) {
+        clearTimeout(detailHideTimer);
+        detailHideTimer = null;
+      }
+      animateConnector();
+    }
+
+    // ═══ CONNECTOR ARROWS & FLOW TRANSITION ═══
+    function updateConnectorPositions() {
+      const svg = document.querySelector('.connector-svg');
+      const salaryCard = document.querySelector('.salary-card');
+      const card1 = document.querySelector('.card--isybank');
+      const card2 = document.querySelector('.card--emergency');
+      const card3 = document.querySelector('.card-pac-wrapper');
+
+      if (!svg || !salaryCard || !card1 || !card2 || !card3) return;
+
+      const svgRect = svg.getBoundingClientRect();
+      if (svgRect.width === 0) return;
+
+      const salaryRect = salaryCard.getBoundingClientRect();
+      const card1Rect = card1.getBoundingClientRect();
+      const card2Rect = card2.getBoundingClientRect();
+      const card3Rect = card3.getBoundingClientRect();
+
+      const xSalary = ((salaryRect.left + salaryRect.width / 2) - svgRect.left) / svgRect.width * 1000;
+      const x1 = ((card1Rect.left + card1Rect.width / 2) - svgRect.left) / svgRect.width * 1000;
+      const x2 = ((card2Rect.left + card2Rect.width / 2) - svgRect.left) / svgRect.width * 1000;
+      const x3 = ((card3Rect.left + card3Rect.width / 2) - svgRect.left) / svgRect.width * 1000;
+
+      // Update Upper Branches
+      const dUpper1 = `M ${xSalary} 0 C ${xSalary} 24, ${x1} 12, ${x1} 30`;
+      const dUpper2 = `M ${xSalary} 0 C ${xSalary} 24, ${x2} 12, ${x2} 30`;
+      const dUpper3 = `M ${xSalary} 0 C ${xSalary} 24, ${x3} 12, ${x3} 30`;
+
+      const gUp1 = document.getElementById('flow-glow-upper-1');
+      const lUp1 = document.getElementById('flow-line-upper-1');
+      if (gUp1) gUp1.setAttribute('d', dUpper1);
+      if (lUp1) lUp1.setAttribute('d', dUpper1);
+
+      const gUp2 = document.getElementById('flow-glow-upper-2');
+      const lUp2 = document.getElementById('flow-line-upper-2');
+      if (gUp2) gUp2.setAttribute('d', dUpper2);
+      if (lUp2) lUp2.setAttribute('d', dUpper2);
+
+      const gUp3 = document.getElementById('flow-glow-upper-3');
+      const lUp3 = document.getElementById('flow-line-upper-3');
+      if (gUp3) gUp3.setAttribute('d', dUpper3);
+      if (lUp3) lUp3.setAttribute('d', dUpper3);
+
+      // Update Lower Arrows
+      const dLower1 = `M ${x1} 60 L ${x1} 84`;
+      const dLower2 = `M ${x2} 60 L ${x2} 84`;
+      const dLower3 = `M ${x3} 60 L ${x3} 84`;
+
+      const gLow1 = document.getElementById('flow-glow-lower-1');
+      const lLow1 = document.getElementById('flow-line-lower-1');
+      if (gLow1) gLow1.setAttribute('d', dLower1);
+      if (lLow1) lLow1.setAttribute('d', dLower1);
+
+      const gLow2 = document.getElementById('flow-glow-lower-2');
+      const lLow2 = document.getElementById('flow-line-lower-2');
+      if (gLow2) gLow2.setAttribute('d', dLower2);
+      if (lLow2) lLow2.setAttribute('d', dLower2);
+
+      const gLow3 = document.getElementById('flow-glow-lower-3');
+      const lLow3 = document.getElementById('flow-line-lower-3');
+      if (gLow3) gLow3.setAttribute('d', dLower3);
+      if (lLow3) lLow3.setAttribute('d', dLower3);
+
+      // Update Oval Money Nodes
+      const oval1 = document.getElementById('flow-oval-1');
+      const oval2 = document.getElementById('flow-oval-2');
+      const oval3 = document.getElementById('flow-oval-3');
+
+      if (oval1) oval1.setAttribute('x', Math.max(4, x1 - 55));
+      if (oval2) oval2.setAttribute('x', x2 - 50);
+      if (oval3) oval3.setAttribute('x', x3 - 50);
+    }
+
+    let connectorAnimId = null;
+    function animateConnector(duration = 550) {
+      if (connectorAnimId) {
+        cancelAnimationFrame(connectorAnimId);
+      }
+      const startTime = performance.now();
+
+      function frame(now) {
+        updateConnectorPositions();
+        if (now - startTime < duration) {
+          connectorAnimId = requestAnimationFrame(frame);
+        } else {
+          updateConnectorPositions();
+          connectorAnimId = null;
+        }
+      }
+
+      connectorAnimId = requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', updateConnectorPositions);
+    window.addEventListener('DOMContentLoaded', updateConnectorPositions);
+    window.addEventListener('load', updateConnectorPositions);
+
+    // Clicking anywhere on active overlay closes it
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.btn-detail') || e.target.closest('.pac-clickable-body')) {
+        return;
+      }
+      document.querySelectorAll('.card-hover-overlay.active').forEach(el => {
+        el.classList.remove('active');
+      });
+
+      // Close PAC card if flipped and user clicks outside of it
+      const pacInner = document.getElementById('pac-card-inner');
+      if (pacInner && pacInner.classList.contains('is-flipped')) {
+        if (!e.target.closest('.card-pac-wrapper')) {
+          closePacModal(e);
+        }
+      }
+    });
+
+    // Close overlays or PAC modal on pressing Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.card-hover-overlay').forEach(el => {
+          el.classList.remove('active');
+        });
+        closePacModal(e);
+      }
+    });
+
+    // ═══ DONUT CHART HOVER FIXED DETAIL WINDOW ═══
+    const segmentData = {
+      equity: {
+        title: 'Azionario',
+        pct: '75%',
+        color: '#00d4ff',
+        desc: 'Alti rendimenti, alta volatilità'
+      },
+      bonds: {
+        title: 'Obbligazionario',
+        pct: '15%',
+        color: '#ff6bdf',
+        desc: 'Bassa volatilità e rendimenti stabili'
+      },
+      commodities: {
+        title: 'Materie Prime',
+        pct: '10%',
+        color: '#ffb800',
+        desc: 'Protezione dall\'inflazione e decorrelazione'
+      }
+    };
+
+    let detailHideTimer = null;
+
+    function showDetailWindow(key) {
+      if (detailHideTimer) {
+        clearTimeout(detailHideTimer);
+        detailHideTimer = null;
+      }
+      const data = segmentData[key];
+      if (!data) return;
+
+      const win = document.getElementById('donut-detail-window');
+      const dot = document.getElementById('window-dot');
+      const title = document.getElementById('window-title');
+      const pct = document.getElementById('window-pct');
+      const desc = document.getElementById('window-desc');
+
+      if (win && dot && title && pct && desc) {
+        dot.style.background = data.color;
+        dot.style.boxShadow = `0 0 10px ${data.color}`;
+        title.textContent = data.title;
+        pct.textContent = data.pct;
+        pct.style.color = data.color;
+        desc.textContent = data.desc;
+
+        win.style.borderColor = data.color + '66';
+        win.style.boxShadow = `0 16px 36px rgba(0, 0, 0, 0.6), 0 0 24px ${data.color}25`;
+
+        // Toggle content sections
+        const eq = document.getElementById('window-content-equity');
+        const bd = document.getElementById('window-content-bonds');
+        const cm = document.getElementById('window-content-commodities');
+        if (eq) eq.style.display = key === 'equity' ? 'block' : 'none';
+        if (bd) bd.style.display = key === 'bonds' ? 'block' : 'none';
+        if (cm) cm.style.display = key === 'commodities' ? 'block' : 'none';
+
+        win.classList.add('visible');
+        const altriInv = document.getElementById('pac-altri-investimenti');
+        if (altriInv) {
+          altriInv.style.opacity = '0';
+          altriInv.style.pointerEvents = 'none';
+        }
+      }
+    }
+
+    function scheduleHideDetailWindow() {
+      if (detailHideTimer) clearTimeout(detailHideTimer);
+      detailHideTimer = setTimeout(() => {
+        const win = document.getElementById('donut-detail-window');
+        if (win) win.classList.remove('visible');
+        const altriInv = document.getElementById('pac-altri-investimenti');
+        if (altriInv) {
+          altriInv.style.opacity = '1';
+          altriInv.style.pointerEvents = 'auto';
+        }
+      }, 120);
+    }
+
+    document.querySelectorAll('.donut-segment').forEach(seg => {
+      seg.addEventListener('mouseenter', () => {
+        const key = seg.getAttribute('data-segment');
+        showDetailWindow(key);
+      });
+
+      seg.addEventListener('mouseleave', () => {
+        scheduleHideDetailWindow();
+      });
+    });
+
+    const detailWin = document.getElementById('donut-detail-window');
+    if (detailWin) {
+      detailWin.addEventListener('mouseenter', () => {
+        if (detailHideTimer) {
+          clearTimeout(detailHideTimer);
+          detailHideTimer = null;
+        }
+      });
+      detailWin.addEventListener('mouseleave', () => {
+        scheduleHideDetailWindow();
+      });
+    }
+  </script>
+</body>
+
+</html>
