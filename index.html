@@ -86,8 +86,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 24px;
+      /* Fluid horizontal padding: 12px on 360px, 24px on 1180px+ */
+      padding: clamp(10px, 3vw, 24px) clamp(12px, 4vw, 24px);
       position: relative;
+      /* Prevent rubber-band horizontal bounce revealing blank background */
+      overscroll-behavior-x: none;
     }
 
     /* ═══════════════════════════════════════════
@@ -152,12 +155,15 @@
     .salary-card {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 8px 26px;
+      gap: clamp(8px, 2vw, 14px);
+      padding: clamp(6px, 1.5vw, 8px) clamp(14px, 3vw, 26px);
       border-radius: 100px;
       background: linear-gradient(135deg, rgba(30, 41, 65, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
       border: 1.5px solid rgba(56, 189, 248, 0.4);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.15);
+      /* Prevent the pill from overflowing narrow viewports */
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .salary-icon {
@@ -177,6 +183,7 @@
       display: flex;
       flex-direction: column;
       text-align: left;
+      min-width: 0; /* allow text to shrink/truncate inside flex */
     }
 
     .salary-label {
@@ -189,7 +196,8 @@
 
     .salary-value {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.65rem;
+      /* fluid: 1.2rem on 360px → 1.65rem on 700px+ */
+      font-size: clamp(1.2rem, 4vw, 1.65rem);
       font-weight: 800;
       color: #ffffff;
       line-height: 1.1;
@@ -297,7 +305,8 @@
     }
 
     .dest-grid.pac-expanded {
-      grid-template-columns: 145px 165px 1fr;
+      /* Use minmax so the fixed side-columns never underflow below 130px */
+      grid-template-columns: minmax(130px, 145px) minmax(130px, 165px) 1fr;
     }
 
     .dest-grid.pac-expanded .card,
@@ -422,7 +431,7 @@
     }
 
     .card {
-      padding: 24px 20px;
+      padding: clamp(16px, 3vw, 24px) clamp(14px, 2.5vw, 20px);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -505,7 +514,9 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 5px 14px;
+      /* Minimum touch-target height of 44px per WCAG 2.5.5 */
+      min-height: 44px;
+      padding: 0 14px;
       border-radius: 50px;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       font-size: 0.72rem;
@@ -520,6 +531,9 @@
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: none;
       user-select: none;
+      /* Prevent tapping from triggering parent hover ripple on iOS */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .btn-detail svg {
@@ -685,14 +699,14 @@
     }
 
     .card-titles h2 {
-      font-size: 1.1rem;
+      font-size: clamp(0.92rem, 2.5vw, 1.1rem);
       font-weight: 800;
       color: #ffffff;
       letter-spacing: -0.01em;
     }
 
     .card-titles .subtitle {
-      font-size: 0.74rem;
+      font-size: clamp(0.66rem, 1.8vw, 0.74rem);
       font-weight: 600;
       color: var(--text-muted);
       letter-spacing: 0.02em;
@@ -730,11 +744,14 @@
 
     .big-balance {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.7rem;
+      /* fluid: 1.1rem on 360px → 1.7rem on 800px+ */
+      font-size: clamp(1.1rem, 4.5vw, 1.7rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1.15;
       text-align: center;
+      /* Prevent long balance strings from overflowing */
+      word-break: break-word;
     }
 
     .big-balance-cyan {
@@ -758,7 +775,7 @@
     .card-pac-wrapper {
       perspective: 1200px;
       width: 100%;
-      height: 100%;
+      /* height follows the flip-inner; don't set fixed height here */
       min-height: 410px;
       position: relative;
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -771,7 +788,6 @@
     .card-flip-inner {
       position: relative;
       width: 100%;
-      height: 100%;
       min-height: 410px;
       transform-style: preserve-3d;
       transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
@@ -997,8 +1013,9 @@
 
     .donut-container {
       position: relative;
-      width: 350px;
-      height: 350px;
+      /* fluid: 200px on 360px → 350px on 1180px */
+      width: clamp(200px, 40vw, 350px);
+      height: clamp(200px, 40vw, 350px);
       max-width: 100%;
       flex-shrink: 0;
       display: flex;
@@ -1192,9 +1209,12 @@
       letter-spacing: -0.015em;
       margin: 0;
       line-height: 1.2;
-      white-space: nowrap;
+      /* nowrap only when there is enough room; let it wrap on small cards */
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .pac-col-tag {
@@ -2259,19 +2279,23 @@
     }
 
     /* ═══════════════════════════════════════════
-       RESPONSIVE
+       RESPONSIVE — 960px breakpoint
+       (Single-column layout, connector hidden)
        ═══════════════════════════════════════════ */
     @media (max-width: 960px) {
 
       body {
-        padding: 20px 12px;
+        /* Overridden here to be safe on tablets that don't need fluid clamp */
+        padding: 20px 16px;
+        align-items: flex-start; /* allow content taller than viewport to scroll */
       }
 
       .dest-grid,
       .dest-grid.pac-expanded {
         grid-template-columns: 1fr;
-        max-width: 480px;
+        max-width: 520px;
         gap: 16px;
+        margin-inline: auto; /* centre the single column */
       }
 
       .connector-box {
@@ -2282,16 +2306,18 @@
         grid-template-columns: 1fr;
       }
 
-      body.pac-modal-open .card-pac-wrapper {
-        width: 96vw !important;
-        height: 94vh !important;
+      /* PAC card: auto height on mobile (no fixed pixel override) */
+      .card-pac-wrapper,
+      .card-flip-inner {
         min-height: auto !important;
-        max-height: 94vh !important;
+        height: auto !important;
       }
 
       .card-flip-back {
-        overflow-y: auto !important;
-        padding: 16px 14px !important;
+        overflow-y: auto;
+        /* Ensure the back face has its own height when single-column */
+        min-height: 420px;
+        padding: 16px 14px;
       }
 
       .target-chart-wrapper {
@@ -2302,9 +2328,6 @@
       }
 
       .donut-back-layout {
-        /* This element is display: grid, so the old flex-based column stacking
-           declaration was a no-op, which is why the three-column layout survived
-           below 960px and asked a 294px donut to fit a ~149px track. */
         grid-template-columns: 1fr;
         gap: 20px;
         height: auto;
@@ -2318,8 +2341,9 @@
       .pac-back-col--left,
       .pac-back-col--right {
         width: 100%;
-        max-width: 380px;
+        max-width: 100%; /* full width on mobile */
         height: auto;
+        margin-inline: auto;
       }
 
       .pac-altri-investimenti {
@@ -2334,24 +2358,23 @@
         min-height: 90px;
       }
 
-      .donut-container {
-        width: 294px;
-        height: 294px;
-      }
+      /* donut: let clamp() on .donut-container handle scaling;
+         clamp(200px, 40vw, 350px) gives ~250px on a 640px screen */
 
       .donut-detail-window {
         position: relative;
         inset: auto;
         width: 100%;
-        max-width: 360px;
+        max-width: 100%;
         height: auto;
         min-height: 280px;
       }
 
       #window-content-bonds,
       #window-content-commodities {
-        flex: 0 0 180px;
-        height: 180px;
+        flex: 0 0 auto;
+        height: auto;
+        min-height: 180px;
       }
 
       .chart-callout {
@@ -2368,6 +2391,249 @@
       .pac-back-grid {
         grid-template-columns: 1fr;
         grid-template-rows: auto;
+      }
+
+      /* Expand side-card compressed styles reset on single-column */
+      .dest-grid.pac-expanded .card--isybank,
+      .dest-grid.pac-expanded .card--emergency {
+        padding: clamp(16px, 3vw, 24px) clamp(14px, 2.5vw, 20px);
+        overflow: visible;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .card-top,
+      .dest-grid.pac-expanded .card--emergency .card-top {
+        margin-bottom: 12px;
+        justify-content: flex-start;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .card-header-left,
+      .dest-grid.pac-expanded .card--emergency .card-header-left {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 10px;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .card-icon,
+      .dest-grid.pac-expanded .card--emergency .card-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1.25rem;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .card-titles,
+      .dest-grid.pac-expanded .card--emergency .card-titles {
+        text-align: left;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .card-titles h2,
+      .dest-grid.pac-expanded .card--emergency .card-titles h2 {
+        font-size: clamp(0.92rem, 2.5vw, 1.1rem);
+        white-space: normal;
+        text-align: left;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .card-titles .subtitle,
+      .dest-grid.pac-expanded .card--emergency .card-titles .subtitle {
+        font-size: clamp(0.66rem, 1.8vw, 0.74rem);
+        text-align: left;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .big-balance,
+      .dest-grid.pac-expanded .card--emergency .big-balance {
+        font-size: clamp(1.1rem, 4.5vw, 1.7rem);
+      }
+
+      .dest-grid.pac-expanded .card--isybank .balance-caption,
+      .dest-grid.pac-expanded .card--emergency .balance-caption {
+        font-size: 0.7rem;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE — 600px breakpoint
+       (Small tablets / large phones in landscape)
+       ═══════════════════════════════════════════ */
+    @media (max-width: 600px) {
+
+      body {
+        padding: 16px 12px;
+      }
+
+      .dest-grid,
+      .dest-grid.pac-expanded {
+        max-width: 100%;
+        gap: 14px;
+      }
+
+      .salary-card {
+        /* On very narrow phones the salary pill can almost fill the width */
+        max-width: calc(100% - 24px);
+      }
+
+      .card {
+        min-height: 360px;
+      }
+
+      .card-pac-wrapper,
+      .card-flip-inner {
+        min-height: 360px !important;
+      }
+
+      .card-flip-back {
+        min-height: 360px;
+        padding: 14px 12px;
+      }
+
+      .donut-back-layout {
+        gap: 16px;
+      }
+
+      .pac-placeholder-box {
+        min-height: 80px;
+      }
+
+      .pac-back-col--left,
+      .pac-back-col--right {
+        align-items: center;
+      }
+
+      /* Ensure 2×2 subcard grid collapses to 1 column */
+      .donut-tooltip-subcards {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+      }
+
+      /* Detail window: full width, unconstrained height */
+      .donut-detail-window {
+        min-height: auto;
+      }
+
+      /* Button row: wrap and keep 44px target */
+      .card-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .btn-detail {
+        flex: 1 1 auto;
+        max-width: 220px;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE — 400px breakpoint
+       (Very small phones: 360–400px wide)
+       ═══════════════════════════════════════════ */
+    @media (max-width: 400px) {
+
+      body {
+        padding: 12px 10px;
+      }
+
+      .salary-card {
+        gap: 8px;
+        padding: 6px 12px;
+      }
+
+      .salary-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+      }
+
+      .card {
+        min-height: 320px;
+        padding: 14px 12px;
+      }
+
+      .card-pac-wrapper,
+      .card-flip-inner {
+        min-height: 320px !important;
+      }
+
+      .card-flip-back {
+        min-height: 320px;
+        padding: 12px 10px;
+      }
+
+      /* Donut: clamp already goes to 200px minimum at 360px (40vw = 144px < 200px → floor at 200px).
+         On tiny screens let it breathe by taking full available width */
+      .donut-container {
+        width: min(200px, 100%);
+        height: min(200px, 100vw - 60px);
+      }
+
+      .pac-section-total-label {
+        font-size: 0.60rem;
+      }
+
+      .pac-section-total-value {
+        font-size: 0.82rem;
+      }
+
+      .pac-subcard-title {
+        font-size: 0.80rem;
+      }
+
+      .pac-subcard-val {
+        font-size: 0.88rem;
+      }
+
+      .yield-pill {
+        font-size: 0.72rem;
+        padding: 5px 10px;
+        gap: 4px;
+      }
+
+      .overlay-list li {
+        font-size: 0.78rem;
+      }
+
+      .overlay-desc {
+        font-size: 0.72rem;
+      }
+    }
+
+    /* ═══════════════════════════════════════════
+       TOUCH: replace hover-only donut interaction
+       with a pointer-coarse / touch-specific rule
+       ═══════════════════════════════════════════ */
+    @media (pointer: coarse) {
+      /* Increase hit areas for donut segments on touch screens */
+      .donut-segment {
+        stroke-width: 40; /* slightly wider to be easier to tap */
+      }
+
+      /* The detail window stays visible until tapped again on touch */
+      .donut-detail-window {
+        touch-action: manipulation;
+      }
+
+      /* Disable translateY hover effect on cards — prevents accidental
+         visual jump during scroll/swipe on iOS */
+      .glass-box:hover {
+        transform: none;
+      }
+
+      .card-pac-wrapper:hover {
+        transform: none;
+      }
+
+      .pac-placeholder-box:hover {
+        transform: none;
+      }
+
+      .pac-subcard:hover {
+        transform: none;
+      }
+
+      .pac-subcard--full:hover {
+        transform: none !important;
+      }
+
+      .btn-detail:hover {
+        transform: none;
       }
     }
   </style>
@@ -3150,6 +3416,7 @@
       }, 120);
     }
 
+    /* Touch: show donut detail on tap (pointer-coarse / no hover) */
     document.querySelectorAll('.donut-segment').forEach(seg => {
       seg.addEventListener('mouseenter', () => {
         const key = seg.getAttribute('data-segment');
@@ -3158,6 +3425,21 @@
 
       seg.addEventListener('mouseleave', () => {
         scheduleHideDetailWindow();
+      });
+
+      /* For touch devices where hover never fires */
+      seg.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = seg.getAttribute('data-segment');
+        const win = document.getElementById('donut-detail-window');
+        if (win && win.classList.contains('visible') && win.dataset.activeSegment === key) {
+          /* Tapping same segment again hides the window */
+          scheduleHideDetailWindow();
+          win.dataset.activeSegment = '';
+        } else {
+          if (win) win.dataset.activeSegment = key;
+          showDetailWindow(key);
+        }
       });
     });
 
