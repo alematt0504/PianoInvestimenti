@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="Dashboard interattiva del flusso finanziario mensile">
   <title>WealthFlow — Flusso Finanziario Mensile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -54,6 +54,9 @@
       --radius-lg: 14px;
       --radius-md: 10px;
 
+      --page-pad-y: clamp(10px, 3vw, 24px);
+      --page-pad-x: clamp(12px, 4vw, 24px);
+
       /* Semantic z-index scale — never use bare numbers */
       --z-content: 1;
       --z-card-face: 2;
@@ -73,6 +76,18 @@
       height: 100%;
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
     body {
       /* min-height, not height: centres short content via the flex rules below,
          and lets tall content scroll instead of being clipped. dvh so mobile
@@ -87,7 +102,10 @@
       align-items: center;
       justify-content: center;
       /* Fluid horizontal padding: 12px on 360px, 24px on 1180px+ */
-      padding: clamp(10px, 3vw, 24px) clamp(12px, 4vw, 24px);
+      padding: max(var(--page-pad-y), env(safe-area-inset-top))
+        max(var(--page-pad-x), env(safe-area-inset-right))
+        max(var(--page-pad-y), env(safe-area-inset-bottom))
+        max(var(--page-pad-x), env(safe-area-inset-left));
       position: relative;
       /* Prevent rubber-band horizontal bounce revealing blank background */
       overscroll-behavior-x: none;
@@ -139,7 +157,8 @@
       -webkit-backdrop-filter: blur(24px);
       border-radius: var(--radius-xl);
       box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background-color 0.25s ease, border-color 0.25s ease,
+        transform 0.25s ease, box-shadow 0.25s ease;
     }
 
     .glass-box:hover {
@@ -297,7 +316,7 @@
        ═══════════════════════════════════════════ */
     .dest-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 2fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
       gap: 18px;
       width: 100%;
       align-items: stretch;
@@ -305,8 +324,8 @@
     }
 
     .dest-grid.pac-expanded {
-      /* Use minmax so the fixed side-columns never underflow below 130px */
-      grid-template-columns: minmax(130px, 145px) minmax(130px, 165px) 1fr;
+      /* Keep the side cards wide enough for readable labels when PAC expands. */
+      grid-template-columns: minmax(165px, 175px) minmax(165px, 175px) minmax(0, 1fr);
     }
 
     .dest-grid.pac-expanded .card,
@@ -361,7 +380,7 @@
 
     .dest-grid.pac-expanded .card--isybank .card-titles .subtitle,
     .dest-grid.pac-expanded .card--emergency .card-titles .subtitle {
-      font-size: 0.60rem;
+      font-size: 0.72rem;
       white-space: normal;
       word-break: break-word;
       line-height: 1.2;
@@ -394,13 +413,13 @@
 
     .dest-grid.pac-expanded .card--isybank .balance-caption,
     .dest-grid.pac-expanded .card--emergency .balance-caption {
-      font-size: 0.56rem;
+      font-size: 0.7rem;
       line-height: 1.15;
       white-space: normal;
     }
 
     .dest-grid.pac-expanded .card--emergency .yield-pill {
-      font-size: 0.62rem;
+      font-size: 0.7rem;
       padding: 3px 6px;
       gap: 3px;
       white-space: nowrap;
@@ -424,7 +443,7 @@
     .dest-grid.pac-expanded .card--isybank .btn-detail,
     .dest-grid.pac-expanded .card--emergency .btn-detail {
       padding: 4px 8px;
-      font-size: 0.60rem;
+      font-size: 0.72rem;
       gap: 4px;
       white-space: nowrap;
       max-width: 100%;
@@ -475,7 +494,7 @@
       opacity: 0;
       pointer-events: none;
       transform: scale(0.96);
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: opacity 0.25s ease, transform 0.25s ease;
       z-index: 10;
     }
 
@@ -528,7 +547,8 @@
       color: var(--text-muted);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background-color 0.2s ease, border-color 0.2s ease,
+        color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
       box-shadow: none;
       user-select: none;
       /* Prevent tapping from triggering parent hover ripple on iOS */
@@ -836,7 +856,7 @@
       align-items: stretch;
       justify-content: center;
       padding: 18px 24px;
-      cursor: pointer;
+      cursor: default;
       z-index: 1;
       overflow: visible;
       background: rgba(11, 17, 33, 0.96) !important;
@@ -866,7 +886,7 @@
       width: 100%;
       border-radius: var(--radius-md);
       padding: 10px 0;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background-color 0.25s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -877,6 +897,42 @@
     .pac-clickable-body:hover {
       background: rgba(16, 231, 151, 0.04);
       border-radius: var(--radius-lg);
+    }
+
+    .pac-clickable-body:focus-visible,
+    .btn-detail:focus-visible,
+    .btn-close-modal:focus-visible,
+    .donut-segment:focus-visible,
+    .donut-segment-button:focus-visible {
+      outline: 3px solid var(--amber-bright);
+      outline-offset: 3px;
+    }
+
+    .pac-back-close {
+      align-self: flex-end;
+      min-height: 44px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .donut-segment-controls {
+      display: none;
+      width: 100%;
+      gap: 8px;
+      margin: 10px 0 6px;
+    }
+
+    .donut-segment-button {
+      min-width: 0;
+      min-height: 44px;
+      padding: 6px 8px;
+      border: 1px solid var(--glass-border-focus);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-white);
+      font: 700 0.75rem/1.25 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer;
+      touch-action: manipulation;
     }
 
     /* ── MODAL TOP BAR ── */
@@ -943,7 +999,8 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.16);
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: background-color 0.2s ease, border-color 0.2s ease,
+        color 0.2s ease, transform 0.2s ease;
       backdrop-filter: blur(8px);
     }
 
@@ -1133,6 +1190,8 @@
 
     .pac-back-col--right {
       justify-content: flex-start;
+      container-type: inline-size;
+      container-name: pac-detail;
     }
 
     .pac-col-header {
@@ -1471,6 +1530,24 @@
       font-family: 'JetBrains Mono', monospace;
       font-size: 1.15rem;
       font-weight: 800;
+    }
+
+    @container pac-detail (max-width: 16rem) {
+      .donut-window-header {
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .donut-window-title-group {
+        min-width: 0;
+        flex: 1 1 100%;
+        gap: 6px;
+      }
+
+      .donut-window-title {
+        font-size: 0.85rem;
+        overflow-wrap: anywhere;
+      }
     }
 
     .donut-window-desc {
@@ -2286,7 +2363,8 @@
 
       body {
         /* Overridden here to be safe on tablets that don't need fluid clamp */
-        padding: 20px 16px;
+        --page-pad-y: 20px;
+        --page-pad-x: 16px;
         align-items: flex-start; /* allow content taller than viewport to scroll */
       }
 
@@ -2306,17 +2384,7 @@
         grid-template-columns: 1fr;
       }
 
-      /* PAC card: auto height on mobile (no fixed pixel override) */
-      .card-pac-wrapper,
-      .card-flip-inner {
-        min-height: auto !important;
-        height: auto !important;
-      }
-
       .card-flip-back {
-        overflow-y: auto;
-        /* Ensure the back face has its own height when single-column */
-        min-height: 420px;
         padding: 16px 14px;
       }
 
@@ -2457,7 +2525,8 @@
     @media (max-width: 600px) {
 
       body {
-        padding: 16px 12px;
+        --page-pad-y: 16px;
+        --page-pad-x: 12px;
       }
 
       .dest-grid,
@@ -2471,17 +2540,7 @@
         max-width: calc(100% - 24px);
       }
 
-      .card {
-        min-height: 360px;
-      }
-
-      .card-pac-wrapper,
-      .card-flip-inner {
-        min-height: 360px !important;
-      }
-
       .card-flip-back {
-        min-height: 360px;
         padding: 14px 12px;
       }
 
@@ -2528,7 +2587,8 @@
     @media (max-width: 400px) {
 
       body {
-        padding: 12px 10px;
+        --page-pad-y: 12px;
+        --page-pad-x: 10px;
       }
 
       .salary-card {
@@ -2543,25 +2603,11 @@
       }
 
       .card {
-        min-height: 320px;
         padding: 14px 12px;
       }
 
-      .card-pac-wrapper,
-      .card-flip-inner {
-        min-height: 320px !important;
-      }
-
       .card-flip-back {
-        min-height: 320px;
         padding: 12px 10px;
-      }
-
-      /* Donut: clamp already goes to 200px minimum at 360px (40vw = 144px < 200px → floor at 200px).
-         On tiny screens let it breathe by taking full available width */
-      .donut-container {
-        width: min(200px, 100%);
-        height: min(200px, 100vw - 60px);
       }
 
       .pac-section-total-label {
@@ -2599,6 +2645,191 @@
        TOUCH: replace hover-only donut interaction
        with a pointer-coarse / touch-specific rule
        ═══════════════════════════════════════════ */
+    /* The stacked layout needs content-height faces; absolute flip faces collapse
+       the card at tablet widths and clip its contents on smaller phones. */
+    @media (max-width: 960px) {
+      .dest-grid,
+      .dest-grid.pac-expanded {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .card,
+      .dest-grid.pac-expanded .card,
+      .card-flip-front {
+        min-height: clamp(280px, 45vw, 340px);
+      }
+
+      .card:has(.card-hover-overlay.active),
+      .card-flip-front:has(.card-hover-overlay.active) {
+        min-height: max(clamp(280px, 45vw, 340px), 16rem);
+      }
+
+      .card-hover-overlay.active {
+        overflow-y: auto;
+      }
+
+      .card-pac-wrapper,
+      .card-flip-inner {
+        min-height: 0 !important;
+        height: auto !important;
+      }
+
+      .card-flip-inner,
+      .card-flip-inner.is-flipped {
+        transform: none;
+      }
+
+      .card-face {
+        position: relative;
+        inset: auto;
+        height: auto;
+        backface-visibility: visible;
+        -webkit-backface-visibility: visible;
+      }
+
+      .card-flip-back,
+      .card-flip-back.glass-box:hover {
+        transform: none !important;
+      }
+
+      .card-flip-back {
+        display: none;
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .card-flip-inner.is-flipped .card-flip-front {
+        display: none;
+      }
+
+      .card-flip-inner.is-flipped .card-flip-back {
+        display: flex;
+      }
+
+      .donut-segment-controls {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .donut-segment-button {
+        flex: 1 1 6rem;
+        overflow-wrap: anywhere;
+      }
+
+      .donut-container {
+        width: min(100%, clamp(200px, max(40vw, 16rem), 350px));
+        height: auto;
+        aspect-ratio: 1;
+      }
+
+      .donut-center-main {
+        font-size: clamp(0.6rem, 2.5vw, 0.76rem);
+        letter-spacing: 0.04em;
+      }
+
+      .donut-center-highlight {
+        font-size: clamp(0.85rem, 3.5vw, 1.22rem);
+        letter-spacing: 0.06em;
+      }
+
+      .donut-detail-window {
+        display: none;
+        min-height: 0;
+      }
+
+      .donut-detail-window.visible {
+        display: flex;
+      }
+
+      .pac-back-col--right:has(.donut-detail-window.visible) .pac-altri-investimenti {
+        display: none;
+      }
+
+      .salary-label,
+      .salary-sub,
+      .card-titles .subtitle,
+      .balance-caption,
+      .overlay-title,
+      .pac-col-eyebrow,
+      .pac-placeholder-badge,
+      .pac-placeholder-sub,
+      .pac-subcard-caption,
+      .pac-col-tag,
+      .pac-section-total-label,
+      .donut-window-desc {
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+
+      .card-titles h2 {
+        font-size: 1rem;
+      }
+
+      .overlay-desc,
+      .overlay-list li,
+      .pac-placeholder-title,
+      .btn-detail,
+      .donut-segment-button {
+        font-size: 0.875rem;
+        line-height: 1.4;
+      }
+
+      .pac-subcard--full .pac-subcard-caption,
+      .pac-subcard--full .pac-subcard-inflow {
+        font-size: 0.75rem !important;
+      }
+
+      .dest-grid.pac-expanded .card--isybank .btn-detail,
+      .dest-grid.pac-expanded .card--emergency .btn-detail {
+        min-height: 44px;
+        padding: 0 14px;
+        font-size: 0.875rem;
+      }
+
+      .pac-subcard-title-group,
+      .subcard-row,
+      .pac-col-header {
+        min-width: 0;
+      }
+
+      .pac-subcard-title,
+      .pac-col-title,
+      .modal-title {
+        overflow-wrap: anywhere;
+      }
+
+      .pac-col-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .glass-box,
+      .card-hover-overlay,
+      .donut-detail-window,
+      .btn-detail {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      .card-hover-overlay {
+        background: #0d1627;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
     @media (pointer: coarse) {
       /* Increase hit areas for donut segments on touch screens */
       .donut-segment {
@@ -2643,7 +2874,8 @@
   <!-- ═══ MODAL BACKDROP FOR PAC TAKEOVER ═══ -->
   <div class="modal-backdrop" id="pac-modal-backdrop" onclick="closePacModal(event)"></div>
 
-  <div class="dashboard-container">
+  <main class="dashboard-container">
+    <h1 class="sr-only">Flusso finanziario mensile</h1>
 
     <!-- ═══ SALARY ROOT ═══ -->
     <div class="salary-card glass-box">
@@ -2762,7 +2994,8 @@
         </div>
 
         <div class="card-footer">
-          <button type="button" class="btn-detail btn-detail--cyan" onclick="toggleOverlay('overlay-isybank', event)">
+          <button type="button" class="btn-detail btn-detail--cyan" aria-controls="overlay-isybank"
+            aria-expanded="false" onclick="toggleOverlay('overlay-isybank', event)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
               stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -2816,7 +3049,8 @@
         </div>
 
         <div class="card-footer">
-          <button type="button" class="btn-detail btn-detail--purple"
+          <button type="button" class="btn-detail btn-detail--purple" aria-controls="overlay-emergency"
+            aria-expanded="false"
             onclick="toggleOverlay('overlay-emergency', event)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
               stroke-linejoin="round">
@@ -2859,7 +3093,9 @@
               </div>
             </div>
 
-            <div class="card-body pac-clickable-body" onclick="togglePacFlip(event)" title="Clicca per girare la card">
+            <div class="card-body pac-clickable-body" role="button" tabindex="0" aria-expanded="false"
+              aria-controls="pac-card-details" aria-label="Mostra i dettagli degli investimenti"
+              onclick="togglePacFlip(event)">
               <div class="balance-box">
                 <div class="balance-caption">Capitale Investito</div>
                 <div class="big-balance big-balance-emerald">8.500 €</div>
@@ -2875,7 +3111,8 @@
             </div>
 
             <div class="card-footer">
-              <button type="button" class="btn-detail btn-detail--emerald"
+              <button type="button" class="btn-detail btn-detail--emerald" aria-controls="overlay-pac"
+                aria-expanded="false"
                 onclick="toggleOverlay('overlay-pac', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                   stroke-linejoin="round">
@@ -2889,8 +3126,9 @@
           </div>
 
           <!-- BACK FACE -->
-          <div class="glass-box card-face card-flip-back" onclick="closePacModal(event)"
-            title="Clicca per tornare al riepilogo">
+          <div class="glass-box card-face card-flip-back" id="pac-card-details" inert>
+            <button type="button" class="btn-close-modal pac-back-close" onclick="closePacModal(event)"
+              aria-label="Torna al riepilogo degli investimenti">✕ <span>Riepilogo</span></button>
             <div class="donut-back-layout">
               <!-- LEFT COLUMN: "PORTAFOGLIO INVESTIMENTI" -->
               <div class="pac-back-col pac-back-col--left">
@@ -2908,14 +3146,17 @@
 
                       <!-- 75% Azionario (Starts at 11:00, sweeps 270° to 8:00) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-equity"
+                        role="button" tabindex="0" aria-label="Azioni, 75 per cento"
                         stroke-dasharray="386.42 515.22" stroke-dashoffset="0" data-segment="equity" />
 
                       <!-- 15% Obbligazioni (Starts at 8:00, sweeps 54° to 9:48) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-bonds"
+                        role="button" tabindex="0" aria-label="Obbligazioni, 15 per cento"
                         stroke-dasharray="77.28 515.22" stroke-dashoffset="-386.42" data-segment="bonds" />
 
                       <!-- 10% Materie prime (Starts at 9:48, sweeps 36° to 11:00) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-commodities"
+                        role="button" tabindex="0" aria-label="Materie prime, 10 per cento"
                         stroke-dasharray="51.52 515.22" stroke-dashoffset="-463.70" data-segment="commodities" />
                     </g>
 
@@ -2941,6 +3182,12 @@
                     <span class="donut-center-main">ALLOCAZIONE</span>
                     <span class="donut-center-highlight">TARGET</span>
                   </div>
+                </div>
+
+                <div class="donut-segment-controls" role="group" aria-label="Dettagli allocazione">
+                  <button type="button" class="donut-segment-button" data-segment="equity">Azioni 75%</button>
+                  <button type="button" class="donut-segment-button" data-segment="bonds">Obbligazioni 15%</button>
+                  <button type="button" class="donut-segment-button" data-segment="commodities">Materie prime 10%</button>
                 </div>
 
                 <div class="pac-section-total">
@@ -3119,10 +3366,19 @@
 
     </div>
 
-  </div>
+  </main>
 
   <!-- ═══ OVERLAY & PAC MODAL TAKEOVER SCRIPT ═══ -->
   <script>
+    function closeAllOverlays() {
+      document.querySelectorAll('.card-hover-overlay.active').forEach(el => {
+        el.classList.remove('active');
+      });
+      document.querySelectorAll('.btn-detail[aria-expanded="true"]').forEach(button => {
+        button.setAttribute('aria-expanded', 'false');
+      });
+    }
+
     function toggleOverlay(id, event) {
       if (event) {
         event.stopPropagation();
@@ -3132,13 +3388,12 @@
       const isAlreadyActive = target.classList.contains('active');
 
       // Close all active overlays
-      document.querySelectorAll('.card-hover-overlay').forEach(el => {
-        el.classList.remove('active');
-      });
+      closeAllOverlays();
 
       // Toggle current overlay
       if (!isAlreadyActive) {
         target.classList.add('active');
+        target.parentElement.querySelector('.btn-detail')?.setAttribute('aria-expanded', 'true');
       }
     }
 
@@ -3149,6 +3404,7 @@
       const target = document.getElementById(id);
       if (target) {
         target.classList.remove('active');
+        target.parentElement.querySelector('.btn-detail')?.setAttribute('aria-expanded', 'false');
       }
     }
 
@@ -3169,18 +3425,21 @@
         event.stopPropagation();
       }
       // Chiudi eventuali overlay aperti
-      document.querySelectorAll('.card-hover-overlay.active').forEach(el => {
-        el.classList.remove('active');
-      });
+      closeAllOverlays();
 
       const inner = document.getElementById('pac-card-inner');
       if (inner) {
         inner.classList.add('is-flipped');
+        inner.querySelector('.card-flip-front').inert = true;
+        inner.querySelector('.card-flip-back').inert = false;
       }
+      const flipControl = document.querySelector('.pac-clickable-body');
+      if (flipControl) flipControl.setAttribute('aria-expanded', 'true');
       const grid = document.querySelector('.dest-grid');
       if (grid) {
         grid.classList.add('pac-expanded');
       }
+      document.querySelector('.pac-back-close')?.focus({ preventScroll: true });
       animateConnector();
     }
 
@@ -3191,6 +3450,13 @@
       const inner = document.getElementById('pac-card-inner');
       if (inner) {
         inner.classList.remove('is-flipped');
+        inner.querySelector('.card-flip-back').inert = true;
+        inner.querySelector('.card-flip-front').inert = false;
+      }
+      const flipControl = document.querySelector('.pac-clickable-body');
+      if (flipControl) {
+        flipControl.setAttribute('aria-expanded', 'false');
+        if (inner?.contains(document.activeElement)) flipControl.focus({ preventScroll: true });
       }
       const grid = document.querySelector('.dest-grid');
       if (grid) {
@@ -3289,7 +3555,10 @@
     function animateConnector(duration = 550) {
       if (connectorAnimId) {
         cancelAnimationFrame(connectorAnimId);
+        connectorAnimId = null;
       }
+      const svg = document.querySelector('.connector-svg');
+      if (!svg || svg.getClientRects().length === 0) return;
       const startTime = performance.now();
 
       function frame(now) {
@@ -3314,9 +3583,7 @@
       if (e.target.closest('.btn-detail') || e.target.closest('.pac-clickable-body')) {
         return;
       }
-      document.querySelectorAll('.card-hover-overlay.active').forEach(el => {
-        el.classList.remove('active');
-      });
+      closeAllOverlays();
 
       // Close PAC card if flipped and user clicks outside of it
       const pacInner = document.getElementById('pac-card-inner');
@@ -3328,11 +3595,16 @@
     });
 
     // Close overlays or PAC modal on pressing Escape
+    document.querySelector('.pac-clickable-body')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        togglePacFlip(e);
+      }
+    });
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        document.querySelectorAll('.card-hover-overlay').forEach(el => {
-          el.classList.remove('active');
-        });
+        closeAllOverlays();
         closePacModal(e);
       }
     });
@@ -3395,6 +3667,7 @@
         if (cm) cm.style.display = key === 'commodities' ? 'block' : 'none';
 
         win.classList.add('visible');
+        win.dataset.activeSegment = key;
         const altriInv = document.getElementById('pac-altri-investimenti');
         if (altriInv) {
           altriInv.style.opacity = '0';
@@ -3407,7 +3680,10 @@
       if (detailHideTimer) clearTimeout(detailHideTimer);
       detailHideTimer = setTimeout(() => {
         const win = document.getElementById('donut-detail-window');
-        if (win) win.classList.remove('visible');
+        if (win) {
+          win.classList.remove('visible');
+          win.dataset.activeSegment = '';
+        }
         const altriInv = document.getElementById('pac-altri-investimenti');
         if (altriInv) {
           altriInv.style.opacity = '1';
@@ -3416,31 +3692,41 @@
       }, 120);
     }
 
-    /* Touch: show donut detail on tap (pointer-coarse / no hover) */
+    function toggleSegmentDetail(e) {
+      e.stopPropagation();
+      const key = e.currentTarget.getAttribute('data-segment');
+      const win = document.getElementById('donut-detail-window');
+      if (win && win.classList.contains('visible') && win.dataset.activeSegment === key) {
+        scheduleHideDetailWindow();
+      } else {
+        showDetailWindow(key);
+      }
+    }
+
+    /* Keep the chart keyboard-accessible and provide full-size touch controls. */
     document.querySelectorAll('.donut-segment').forEach(seg => {
       seg.addEventListener('mouseenter', () => {
+        if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
         const key = seg.getAttribute('data-segment');
         showDetailWindow(key);
       });
 
       seg.addEventListener('mouseleave', () => {
+        if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
         scheduleHideDetailWindow();
       });
 
-      /* For touch devices where hover never fires */
-      seg.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const key = seg.getAttribute('data-segment');
-        const win = document.getElementById('donut-detail-window');
-        if (win && win.classList.contains('visible') && win.dataset.activeSegment === key) {
-          /* Tapping same segment again hides the window */
-          scheduleHideDetailWindow();
-          win.dataset.activeSegment = '';
-        } else {
-          if (win) win.dataset.activeSegment = key;
-          showDetailWindow(key);
+      seg.addEventListener('click', toggleSegmentDetail);
+      seg.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          seg.click();
         }
       });
+    });
+
+    document.querySelectorAll('.donut-segment-button').forEach(button => {
+      button.addEventListener('click', toggleSegmentDetail);
     });
 
     const detailWin = document.getElementById('donut-detail-window');
