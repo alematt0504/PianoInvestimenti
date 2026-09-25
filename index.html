@@ -74,6 +74,7 @@
 
     html {
       height: 100%;
+      overflow: hidden;
     }
 
     .sr-only {
@@ -89,11 +90,8 @@
     }
 
     body {
-      /* min-height, not height: centres short content via the flex rules below,
-         and lets tall content scroll instead of being clipped. dvh so mobile
-         browser chrome appearing/disappearing does not change the box. */
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: 100vh;
+      height: 100dvh;
       width: 100%;
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg-deep);
@@ -107,6 +105,7 @@
         max(var(--page-pad-y), env(safe-area-inset-bottom))
         max(var(--page-pad-x), env(safe-area-inset-left));
       position: relative;
+      overflow: hidden;
       /* Prevent rubber-band horizontal bounce revealing blank background */
       overscroll-behavior-x: none;
     }
@@ -135,13 +134,10 @@
       z-index: var(--z-content);
       width: 100%;
       max-width: 1180px;
-      /* Belt-and-braces guard. The layout fixes below are the actual solution;
-         this only ensures a future regression degrades to a clipped edge rather
-         than a page-wide horizontal scrollbar. `clip` rather than `hidden` so no
-         scroll container is created. Safe for the Task 6 sheet: this element has
-         no transform/filter/contain, so it is not a containing block for
-         `position: fixed` descendants and the sheet escapes it. */
-      overflow-x: clip;
+      max-height: 100%;
+      min-height: 0;
+      /* Keep the salary visible while the destination cards scroll inside the viewport. */
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -182,6 +178,7 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.15);
       /* Prevent the pill from overflowing narrow viewports */
       max-width: 100%;
+      flex-shrink: 0;
       box-sizing: border-box;
     }
 
@@ -235,6 +232,7 @@
     .connector-box {
       width: 100%;
       height: 90px;
+      flex-shrink: 0;
       position: relative;
       display: flex;
       justify-content: center;
@@ -320,6 +318,10 @@
       gap: 18px;
       width: 100%;
       align-items: stretch;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
       transition: grid-template-columns 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -856,7 +858,7 @@
       align-items: stretch;
       justify-content: center;
       padding: 18px 24px;
-      cursor: default;
+      cursor: pointer;
       z-index: 1;
       overflow: visible;
       background: rgba(11, 17, 33, 0.96) !important;
@@ -901,38 +903,9 @@
 
     .pac-clickable-body:focus-visible,
     .btn-detail:focus-visible,
-    .btn-close-modal:focus-visible,
-    .donut-segment:focus-visible,
-    .donut-segment-button:focus-visible {
+    .card-flip-back:focus-visible {
       outline: 3px solid var(--amber-bright);
       outline-offset: 3px;
-    }
-
-    .pac-back-close {
-      align-self: flex-end;
-      min-height: 44px;
-      margin-bottom: 10px;
-      flex-shrink: 0;
-    }
-
-    .donut-segment-controls {
-      display: none;
-      width: 100%;
-      gap: 8px;
-      margin: 10px 0 6px;
-    }
-
-    .donut-segment-button {
-      min-width: 0;
-      min-height: 44px;
-      padding: 6px 8px;
-      border: 1px solid var(--glass-border-focus);
-      border-radius: var(--radius-md);
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-white);
-      font: 700 0.75rem/1.25 'Plus Jakarta Sans', sans-serif;
-      cursor: pointer;
-      touch-action: manipulation;
     }
 
     /* ── MODAL TOP BAR ── */
@@ -984,42 +957,6 @@
       font-weight: 600;
       color: var(--text-muted);
       letter-spacing: 0.02em;
-    }
-
-    .btn-close-modal {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 16px;
-      border-radius: 50px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: #e2e8f0;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      cursor: pointer;
-      transition: background-color 0.2s ease, border-color 0.2s ease,
-        color 0.2s ease, transform 0.2s ease;
-      backdrop-filter: blur(8px);
-    }
-
-    .btn-close-modal svg {
-      width: 14px;
-      height: 14px;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    .btn-close-modal:hover {
-      background: rgba(244, 63, 94, 0.2);
-      border-color: rgba(244, 63, 94, 0.55);
-      color: #ffffff;
-      box-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
-      transform: translateY(-1.5px);
-    }
-
-    .btn-close-modal:hover svg {
-      transform: rotate(90deg);
     }
 
     /* ── MODAL MAIN CONTENT (CENTERED TARGET PORTFOLIO) ── */
@@ -1100,6 +1037,11 @@
       stroke-linecap: butt;
       transition: stroke-width 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
       cursor: pointer;
+      outline: none;
+    }
+
+    .donut-segment:focus-visible {
+      stroke-width: 44;
     }
 
     .donut-segment:hover {
@@ -1478,6 +1420,7 @@
       flex-direction: column;
       justify-content: flex-start;
       opacity: 0;
+      visibility: hidden;
       pointer-events: none;
       transform: translateY(6px);
       transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1),
@@ -1491,6 +1434,7 @@
 
     .donut-detail-window.visible {
       opacity: 1;
+      visibility: visible;
       pointer-events: auto;
       transform: translateY(0);
     }
@@ -2706,16 +2650,6 @@
         display: flex;
       }
 
-      .donut-segment-controls {
-        display: flex;
-        flex-wrap: wrap;
-      }
-
-      .donut-segment-button {
-        flex: 1 1 6rem;
-        overflow-wrap: anywhere;
-      }
-
       .donut-container {
         width: min(100%, clamp(200px, max(40vw, 16rem), 350px));
         height: auto;
@@ -2768,8 +2702,7 @@
       .overlay-desc,
       .overlay-list li,
       .pac-placeholder-title,
-      .btn-detail,
-      .donut-segment-button {
+      .btn-detail {
         font-size: 0.875rem;
         line-height: 1.4;
       }
@@ -3126,9 +3059,8 @@
           </div>
 
           <!-- BACK FACE -->
-          <div class="glass-box card-face card-flip-back" id="pac-card-details" inert>
-            <button type="button" class="btn-close-modal pac-back-close" onclick="closePacModal(event)"
-              aria-label="Torna al riepilogo degli investimenti">✕ <span>Riepilogo</span></button>
+          <div class="glass-box card-face card-flip-back" id="pac-card-details" role="group" tabindex="0"
+            aria-label="Dettagli investimenti. Premi Invio o Spazio per chiudere" inert>
             <div class="donut-back-layout">
               <!-- LEFT COLUMN: "PORTAFOGLIO INVESTIMENTI" -->
               <div class="pac-back-col pac-back-col--left">
@@ -3147,16 +3079,19 @@
                       <!-- 75% Azionario (Starts at 11:00, sweeps 270° to 8:00) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-equity"
                         role="button" tabindex="0" aria-label="Azioni, 75 per cento"
+                        aria-controls="donut-detail-window" aria-expanded="false"
                         stroke-dasharray="386.42 515.22" stroke-dashoffset="0" data-segment="equity" />
 
                       <!-- 15% Obbligazioni (Starts at 8:00, sweeps 54° to 9:48) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-bonds"
                         role="button" tabindex="0" aria-label="Obbligazioni, 15 per cento"
+                        aria-controls="donut-detail-window" aria-expanded="false"
                         stroke-dasharray="77.28 515.22" stroke-dashoffset="-386.42" data-segment="bonds" />
 
                       <!-- 10% Materie prime (Starts at 9:48, sweeps 36° to 11:00) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-commodities"
                         role="button" tabindex="0" aria-label="Materie prime, 10 per cento"
+                        aria-controls="donut-detail-window" aria-expanded="false"
                         stroke-dasharray="51.52 515.22" stroke-dashoffset="-463.70" data-segment="commodities" />
                     </g>
 
@@ -3182,12 +3117,6 @@
                     <span class="donut-center-main">ALLOCAZIONE</span>
                     <span class="donut-center-highlight">TARGET</span>
                   </div>
-                </div>
-
-                <div class="donut-segment-controls" role="group" aria-label="Dettagli allocazione">
-                  <button type="button" class="donut-segment-button" data-segment="equity">Azioni 75%</button>
-                  <button type="button" class="donut-segment-button" data-segment="bonds">Obbligazioni 15%</button>
-                  <button type="button" class="donut-segment-button" data-segment="commodities">Materie prime 10%</button>
                 </div>
 
                 <div class="pac-section-total">
@@ -3439,7 +3368,7 @@
       if (grid) {
         grid.classList.add('pac-expanded');
       }
-      document.querySelector('.pac-back-close')?.focus({ preventScroll: true });
+      inner?.querySelector('.card-flip-back')?.focus({ preventScroll: true });
       animateConnector();
     }
 
@@ -3448,6 +3377,7 @@
         event.stopPropagation();
       }
       const inner = document.getElementById('pac-card-inner');
+      const hadFocus = inner?.contains(document.activeElement);
       if (inner) {
         inner.classList.remove('is-flipped');
         inner.querySelector('.card-flip-back').inert = true;
@@ -3456,27 +3386,24 @@
       const flipControl = document.querySelector('.pac-clickable-body');
       if (flipControl) {
         flipControl.setAttribute('aria-expanded', 'false');
-        if (inner?.contains(document.activeElement)) flipControl.focus({ preventScroll: true });
+        if (hadFocus) flipControl.focus({ preventScroll: true });
       }
       const grid = document.querySelector('.dest-grid');
       if (grid) {
         grid.classList.remove('pac-expanded');
       }
-      const win = document.getElementById('donut-detail-window');
-      if (win) {
-        win.classList.remove('visible');
-      }
-      const altriInv = document.getElementById('pac-altri-investimenti');
-      if (altriInv) {
-        altriInv.style.opacity = '1';
-        altriInv.style.pointerEvents = 'auto';
-      }
-      if (detailHideTimer) {
-        clearTimeout(detailHideTimer);
-        detailHideTimer = null;
-      }
+      hideDetailWindow();
       animateConnector();
     }
+
+    const pacBack = document.getElementById('pac-card-details');
+    pacBack?.addEventListener('click', closePacModal);
+    pacBack?.addEventListener('keydown', (event) => {
+      if (event.target === pacBack && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        closePacModal(event);
+      }
+    });
 
     // ═══ CONNECTOR ARROWS & FLOW TRANSITION ═══
     function updateConnectorPositions() {
@@ -3609,7 +3536,7 @@
       }
     });
 
-    // ═══ DONUT CHART HOVER FIXED DETAIL WINDOW ═══
+    // ═══ DONUT CHART CLICK DETAIL WINDOW ═══
     const segmentData = {
       equity: {
         title: 'Azionario',
@@ -3631,13 +3558,7 @@
       }
     };
 
-    let detailHideTimer = null;
-
     function showDetailWindow(key) {
-      if (detailHideTimer) {
-        clearTimeout(detailHideTimer);
-        detailHideTimer = null;
-      }
       const data = segmentData[key];
       if (!data) return;
 
@@ -3668,28 +3589,33 @@
 
         win.classList.add('visible');
         win.dataset.activeSegment = key;
+        document.querySelectorAll('.donut-segment').forEach(segment => {
+          segment.setAttribute('aria-expanded', String(segment.dataset.segment === key));
+        });
         const altriInv = document.getElementById('pac-altri-investimenti');
         if (altriInv) {
+          altriInv.inert = true;
           altriInv.style.opacity = '0';
           altriInv.style.pointerEvents = 'none';
         }
       }
     }
 
-    function scheduleHideDetailWindow() {
-      if (detailHideTimer) clearTimeout(detailHideTimer);
-      detailHideTimer = setTimeout(() => {
-        const win = document.getElementById('donut-detail-window');
-        if (win) {
-          win.classList.remove('visible');
-          win.dataset.activeSegment = '';
-        }
-        const altriInv = document.getElementById('pac-altri-investimenti');
-        if (altriInv) {
-          altriInv.style.opacity = '1';
-          altriInv.style.pointerEvents = 'auto';
-        }
-      }, 120);
+    function hideDetailWindow() {
+      const win = document.getElementById('donut-detail-window');
+      if (win) {
+        win.classList.remove('visible');
+        win.dataset.activeSegment = '';
+      }
+      document.querySelectorAll('.donut-segment').forEach(segment => {
+        segment.setAttribute('aria-expanded', 'false');
+      });
+      const altriInv = document.getElementById('pac-altri-investimenti');
+      if (altriInv) {
+        altriInv.inert = false;
+        altriInv.style.opacity = '1';
+        altriInv.style.pointerEvents = 'auto';
+      }
     }
 
     function toggleSegmentDetail(e) {
@@ -3697,50 +3623,25 @@
       const key = e.currentTarget.getAttribute('data-segment');
       const win = document.getElementById('donut-detail-window');
       if (win && win.classList.contains('visible') && win.dataset.activeSegment === key) {
-        scheduleHideDetailWindow();
+        hideDetailWindow();
       } else {
         showDetailWindow(key);
+        if (e.type === 'click' && matchMedia('(max-width: 960px)').matches) {
+          win?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+        }
       }
     }
 
-    /* Keep the chart keyboard-accessible and provide full-size touch controls. */
+    /* The chart segments remain keyboard-accessible without a rectangular focus outline. */
     document.querySelectorAll('.donut-segment').forEach(seg => {
-      seg.addEventListener('mouseenter', () => {
-        if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        const key = seg.getAttribute('data-segment');
-        showDetailWindow(key);
-      });
-
-      seg.addEventListener('mouseleave', () => {
-        if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-        scheduleHideDetailWindow();
-      });
-
       seg.addEventListener('click', toggleSegmentDetail);
       seg.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          seg.click();
+          toggleSegmentDetail(e);
         }
       });
     });
-
-    document.querySelectorAll('.donut-segment-button').forEach(button => {
-      button.addEventListener('click', toggleSegmentDetail);
-    });
-
-    const detailWin = document.getElementById('donut-detail-window');
-    if (detailWin) {
-      detailWin.addEventListener('mouseenter', () => {
-        if (detailHideTimer) {
-          clearTimeout(detailHideTimer);
-          detailHideTimer = null;
-        }
-      });
-      detailWin.addEventListener('mouseleave', () => {
-        scheduleHideDetailWindow();
-      });
-    }
   </script>
 </body>
 
