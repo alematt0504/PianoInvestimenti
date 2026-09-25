@@ -40,8 +40,24 @@ function runAt(width, height) {
     check(segments.every(item => item.getAttribute('aria-expanded') === 'false'),
       'closed segments do not report collapsed state');
     check(!controls, 'duplicate segment buttons remain');
-    segment.dispatchEvent(new MouseEvent('mouseenter'));
-    check(!detail.classList.contains('visible'), 'hover opens detail without a click');
+    const desktopHover = innerWidth >= 961 && matchMedia('(hover: hover) and (pointer: fine)').matches;
+    segment.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+    check(detail.classList.contains('visible') === desktopHover,
+      'mouse hover opens detail outside desktop or fails to open it on desktop');
+    if (desktopHover) {
+      check(detail.dataset.activeSegment === 'equity', 'hover shows the wrong detail');
+      segments[1].dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+      check(detail.dataset.activeSegment === 'bonds', 'hover does not switch details between segments');
+      segments[1].dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+      check(!detail.classList.contains('visible'), 'detail remains visible after leaving a segment');
+      segment.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'mouse' }));
+      segment.dispatchEvent(new PointerEvent('click', { bubbles: true, pointerType: 'mouse' }));
+      check(detail.classList.contains('visible'), 'mouse click hides a hovered detail');
+      segment.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'mouse' }));
+      check(!detail.classList.contains('visible'), 'detail remains visible after leaving a clicked segment');
+    }
+    segment.dispatchEvent(new PointerEvent('pointerenter', { pointerType: 'touch' }));
+    check(!detail.classList.contains('visible'), 'touch hover opens detail');
     segment.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     check(detail.classList.contains('visible') && detail.dataset.activeSegment === 'equity', 'segment does not open its detail');
     check(segment.getAttribute('aria-expanded') === 'true', 'selected segment does not report expanded state');
@@ -82,6 +98,10 @@ function runAt(width, height) {
     document.querySelector('.pac-clickable-body').click();
     back.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     check(!inner.classList.contains('is-flipped'), 'keyboard cannot close the card');
+    grid.scrollTop = 0;
+    const closedScroll = grid.scrollTop;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    check(grid.scrollTop === closedScroll, 'Escape moves cards while investment card is closed');
     check(document.documentElement.scrollHeight <= innerHeight, 'document is vertically scrollable');
     if (innerWidth < 961) {
       check(grid.scrollHeight > grid.clientHeight, 'mobile cards have no internal scroll area');

@@ -2309,7 +2309,7 @@
         /* Overridden here to be safe on tablets that don't need fluid clamp */
         --page-pad-y: 20px;
         --page-pad-x: 16px;
-        align-items: flex-start; /* allow content taller than viewport to scroll */
+        align-items: flex-start;
       }
 
       .dest-grid,
@@ -2752,6 +2752,188 @@
       }
     }
 
+    /* The opened investment card uses the viewport instead of the cards' scroll area. */
+    @media (max-width: 960px) {
+      .dashboard-container:has(.dest-grid.pac-expanded) {
+        height: 100%;
+      }
+
+      .dashboard-container:has(.dest-grid.pac-expanded) .salary-card,
+      .dest-grid.pac-expanded > .card--isybank,
+      .dest-grid.pac-expanded > .card--emergency {
+        display: none;
+      }
+
+      .dest-grid.pac-expanded {
+        display: block;
+        flex: 1 1 auto;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .dest-grid.pac-expanded .card-pac-wrapper,
+      .dest-grid.pac-expanded .card-flip-inner {
+        height: 100% !important;
+        min-height: 0 !important;
+      }
+
+      .dest-grid.pac-expanded .card-flip-back {
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        justify-content: flex-start;
+        padding: 12px;
+      }
+
+      .dest-grid.pac-expanded .donut-back-layout {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        gap: 8px;
+      }
+
+      .dest-grid.pac-expanded .pac-back-col--left {
+        flex: 0 0 auto;
+      }
+
+      .dest-grid.pac-expanded .pac-back-col--right {
+        flex: 1 1 0;
+        min-height: 0;
+      }
+
+      .dest-grid.pac-expanded .donut-container {
+        width: min(100%, clamp(180px, 32dvh, 220px));
+      }
+
+      .dest-grid.pac-expanded .pac-altri-investimenti {
+        height: 100%;
+        min-height: 0;
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible {
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        padding: 12px;
+      }
+
+      .dest-grid.pac-expanded .donut-back-layout:has(.donut-detail-window.visible) .pac-back-col--left > .pac-col-title,
+      .dest-grid.pac-expanded .donut-back-layout:has(.donut-detail-window.visible) .pac-back-col--left > .pac-section-total {
+        display: none;
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible .donut-tooltip-subcards {
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible .tooltip-subcard {
+        padding: 6px 10px !important;
+        gap: 2px !important;
+      }
+    }
+
+    @media (max-width: 960px) and (max-height: 600px) {
+      .dest-grid.pac-expanded .donut-detail-window.visible .tooltip-subcard {
+        padding: 4px 8px !important;
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible .tooltip-subcard .subcard-row--top {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 4px !important;
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible .tooltip-subcard .pac-subcard-title {
+        font-size: 0.72rem !important;
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible .tooltip-subcard .pac-subcard-inflow {
+        font-size: 0.58rem !important;
+        padding: 2px 4px !important;
+      }
+    }
+
+    @media (max-width: 600px) and (max-height: 600px) {
+      body:has(.dest-grid.pac-expanded) {
+        --page-pad-y: 8px;
+      }
+
+      .dest-grid.pac-expanded .card-flip-back {
+        padding: 8px;
+      }
+
+      .dest-grid.pac-expanded .pac-back-col--left > .pac-col-title {
+        display: none;
+      }
+
+      .dest-grid.pac-expanded .donut-container {
+        width: min(100%, clamp(155px, 30dvh, 180px));
+      }
+    }
+
+    @media (min-width: 601px) and (max-width: 960px) and (max-height: 600px) {
+      .dest-grid.pac-expanded {
+        max-width: 100%;
+      }
+
+      .dest-grid.pac-expanded .donut-back-layout {
+        flex-direction: row;
+        gap: 12px;
+      }
+
+      .dest-grid.pac-expanded .pac-back-col--left,
+      .dest-grid.pac-expanded .pac-back-col--right {
+        width: auto;
+        max-width: none;
+        height: 100%;
+      }
+
+      .dest-grid.pac-expanded .pac-back-col--left {
+        flex: 0 0 min(42%, 270px);
+      }
+
+      .dest-grid.pac-expanded .pac-back-col--right {
+        flex: 1 1 0;
+      }
+
+      .dest-grid.pac-expanded .donut-detail-window.visible .donut-tooltip-subcards {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 961px) and (max-height: 650px) {
+      .dashboard-container:has(.dest-grid.pac-expanded) .connector-box {
+        display: none;
+      }
+    }
+
+    @media (min-width: 961px) and (max-height: 550px) {
+      .dashboard-container:has(.dest-grid.pac-expanded) {
+        height: 100%;
+      }
+
+      .dashboard-container:has(.dest-grid.pac-expanded) .salary-card {
+        display: none;
+      }
+
+      .dest-grid.pac-expanded {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .dest-grid.pac-expanded .card,
+      .dest-grid.pac-expanded .card-pac-wrapper,
+      .dest-grid.pac-expanded .card-flip-inner {
+        height: 100%;
+        min-height: 0;
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -2765,8 +2947,9 @@
 
     @media (pointer: coarse) {
       /* Increase hit areas for donut segments on touch screens */
-      .donut-segment {
-        stroke-width: 40; /* slightly wider to be easier to tap */
+      .donut-segment,
+      .donut-segment:hover {
+        stroke-width: 54;
       }
 
       /* The detail window stays visible until tapped again on touch */
@@ -2798,6 +2981,13 @@
 
       .btn-detail:hover {
         transform: none;
+      }
+    }
+
+    @media (max-width: 600px) and (max-height: 600px) and (pointer: coarse) {
+      .donut-segment,
+      .donut-segment:hover {
+        stroke-width: 64;
       }
     }
   </style>
@@ -3189,7 +3379,7 @@
                   </div>
                 </div>
 
-                <!-- Hover State: Segment Detail Window (overlaps smoothly when visible) -->
+                <!-- Segment detail window: desktop hover or touch and keyboard selection -->
                 <div class="donut-detail-window" id="donut-detail-window">
                   <div class="donut-window-header">
                     <div class="donut-window-title-group">
@@ -3377,6 +3567,7 @@
         event.stopPropagation();
       }
       const inner = document.getElementById('pac-card-inner');
+      const wasFlipped = inner?.classList.contains('is-flipped');
       const hadFocus = inner?.contains(document.activeElement);
       if (inner) {
         inner.classList.remove('is-flipped');
@@ -3393,6 +3584,9 @@
         grid.classList.remove('pac-expanded');
       }
       hideDetailWindow();
+      if (wasFlipped && flipControl && matchMedia('(max-width: 960px)').matches) {
+        flipControl.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      }
       animateConnector();
     }
 
@@ -3536,7 +3730,7 @@
       }
     });
 
-    // ═══ DONUT CHART CLICK DETAIL WINDOW ═══
+    // ═══ DONUT CHART DETAIL WINDOW ═══
     const segmentData = {
       equity: {
         title: 'Azionario',
@@ -3618,22 +3812,35 @@
       }
     }
 
+    const desktopSegmentHover = matchMedia('(min-width: 961px) and (hover: hover) and (pointer: fine)');
+
     function toggleSegmentDetail(e) {
       e.stopPropagation();
       const key = e.currentTarget.getAttribute('data-segment');
+      if (desktopSegmentHover.matches && e.type === 'click' && e.pointerType === 'mouse') {
+        showDetailWindow(key);
+        return;
+      }
       const win = document.getElementById('donut-detail-window');
       if (win && win.classList.contains('visible') && win.dataset.activeSegment === key) {
         hideDetailWindow();
       } else {
         showDetailWindow(key);
-        if (e.type === 'click' && matchMedia('(max-width: 960px)').matches) {
-          win?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
-        }
       }
     }
 
     /* The chart segments remain keyboard-accessible without a rectangular focus outline. */
     document.querySelectorAll('.donut-segment').forEach(seg => {
+      seg.addEventListener('pointerenter', (e) => {
+        if (desktopSegmentHover.matches && e.pointerType === 'mouse') {
+          showDetailWindow(seg.dataset.segment);
+        }
+      });
+      seg.addEventListener('pointerleave', (e) => {
+        if (desktopSegmentHover.matches && e.pointerType === 'mouse') {
+          hideDetailWindow();
+        }
+      });
       seg.addEventListener('click', toggleSegmentDetail);
       seg.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
