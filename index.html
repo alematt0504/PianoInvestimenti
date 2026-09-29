@@ -2409,11 +2409,10 @@
         width: 2px;
         height: 14px;
         background-image: repeating-linear-gradient(to bottom,
-          var(--line-color) 0px,
-          var(--line-color) 5px,
-          transparent 5px,
-          transparent 9px
-        );
+            var(--line-color) 0px,
+            var(--line-color) 5px,
+            transparent 5px,
+            transparent 9px);
         animation: mobileDash 1.2s linear infinite;
         filter: drop-shadow(0 0 4px var(--line-color));
       }
@@ -2429,8 +2428,13 @@
       }
 
       @keyframes mobileDash {
-        0% { background-position: 0 0; }
-        100% { background-position: 0 18px; }
+        0% {
+          background-position: 0 0;
+        }
+
+        100% {
+          background-position: 0 18px;
+        }
       }
 
       .mobile-flow-badge {
@@ -2443,9 +2447,17 @@
         margin: 2px 0 !important;
       }
 
-      .mobile-flow-connector--cyan { --line-color: var(--cyan-bright); }
-      .mobile-flow-connector--purple { --line-color: var(--purple-bright); }
-      .mobile-flow-connector--emerald { --line-color: var(--emerald-bright); }
+      .mobile-flow-connector--cyan {
+        --line-color: var(--cyan-bright);
+      }
+
+      .mobile-flow-connector--purple {
+        --line-color: var(--purple-bright);
+      }
+
+      .mobile-flow-connector--emerald {
+        --line-color: var(--emerald-bright);
+      }
 
       .pac-horizontal-grid {
         grid-template-columns: 1fr;
@@ -3304,6 +3316,7 @@
             <li><span class="overlay-bullet">•</span> Viaggi</li>
             <li><span class="overlay-bullet">•</span> Cene</li>
             <li><span class="overlay-bullet">•</span> Benzina</li>
+            <li><span class="overlay-bullet">•</span> Vestiti</li>
           </ul>
         </div>
 
