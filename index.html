@@ -306,6 +306,10 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     }
 
+    .mobile-flow-connector {
+      display: none;
+    }
+
     /* ═══════════════════════════════════════════
        DESTINATION CARDS GRID
        ═══════════════════════════════════════════ */
@@ -334,8 +338,8 @@
     }
 
     .dest-grid.pac-expanded .donut-container {
-      width: min(100%, 270px);
-      height: min(100%, 270px);
+      width: min(100%, 295px);
+      height: min(100%, 295px);
     }
 
     /* Stile compresso card laterali all'espansione del PAC */
@@ -2315,36 +2319,61 @@
        ═══════════════════════════════════════════ */
     @media (max-width: 960px) {
 
+      html {
+        height: auto;
+        min-height: 100%;
+        overflow-y: auto;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+      }
+
       body {
         /* Overridden here to be safe on tablets that don't need fluid clamp */
         --page-pad-y: 20px;
         --page-pad-x: 16px;
         align-items: flex-start;
+        height: auto;
+        min-height: 100dvh;
+        overflow-y: visible;
+        overflow-x: hidden;
+      }
+
+      html:has(.dest-grid.pac-expanded),
+      body:has(.dest-grid.pac-expanded),
+      html.pac-modal-open,
+      body.pac-modal-open {
+        height: 100dvh !important;
+        overflow: hidden !important;
       }
 
       .dashboard-container {
+        height: auto;
+        max-height: none;
+        min-height: 100%;
+        overflow: visible;
+      }
+
+      .dashboard-container:has(.dest-grid.pac-expanded),
+      body.pac-modal-open .dashboard-container {
         height: 100%;
         max-height: 100%;
+        overflow: hidden;
       }
 
       .salary-card {
-        margin: 10px auto 8px;
+        margin: 10px auto 0;
       }
 
       .dest-grid {
         grid-template-columns: 1fr;
         max-width: 520px;
-        gap: 16px;
+        gap: 0;
         margin-inline: auto;
         /* centre the single column */
-        flex: 1 1 auto;
+        flex: 0 0 auto;
         min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-        overscroll-behavior-y: contain;
-        scrollbar-width: thin;
-        padding: 4px 12px 28px;
+        overflow: visible;
+        padding: 0 12px 32px;
       }
 
       .dest-grid.pac-expanded {
@@ -2353,11 +2382,70 @@
         gap: 16px;
         margin-inline: auto;
         padding: 0;
+        height: 100%;
+        overflow: hidden;
       }
 
       .connector-box {
         display: none;
       }
+
+      .mobile-flow-connector {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 6px auto;
+        width: 100%;
+        position: relative;
+        z-index: 3;
+      }
+
+      .dest-grid.pac-expanded .mobile-flow-connector {
+        display: none !important;
+      }
+
+      .mobile-connector-line {
+        width: 2px;
+        height: 14px;
+        background-image: repeating-linear-gradient(to bottom,
+          var(--line-color) 0px,
+          var(--line-color) 5px,
+          transparent 5px,
+          transparent 9px
+        );
+        animation: mobileDash 1.2s linear infinite;
+        filter: drop-shadow(0 0 4px var(--line-color));
+      }
+
+      .mobile-connector-arrow {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 7px solid var(--line-color);
+        filter: drop-shadow(0 0 5px var(--line-color));
+        margin-top: -1px;
+      }
+
+      @keyframes mobileDash {
+        0% { background-position: 0 0; }
+        100% { background-position: 0 18px; }
+      }
+
+      .mobile-flow-badge {
+        width: auto !important;
+        min-width: 88px !important;
+        padding: 3px 14px !important;
+        font-size: 0.82rem !important;
+        height: 27px !important;
+        box-sizing: border-box !important;
+        margin: 2px 0 !important;
+      }
+
+      .mobile-flow-connector--cyan { --line-color: var(--cyan-bright); }
+      .mobile-flow-connector--purple { --line-color: var(--purple-bright); }
+      .mobile-flow-connector--emerald { --line-color: var(--emerald-bright); }
 
       .pac-horizontal-grid {
         grid-template-columns: 1fr;
@@ -2420,9 +2508,9 @@
 
       #window-content-bonds,
       #window-content-commodities {
-        flex: 0 0 auto;
-        height: auto;
-        min-height: 180px;
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
       }
 
       .chart-callout {
@@ -2842,8 +2930,8 @@
       }
 
       .dest-grid.pac-expanded .donut-container {
-        width: min(100%, clamp(180px, 32dvh, 220px));
-        height: min(100%, clamp(180px, 32dvh, 220px));
+        width: min(100%, clamp(200px, 38dvh, 275px));
+        height: min(100%, clamp(200px, 38dvh, 275px));
         aspect-ratio: 1 / 1;
       }
 
@@ -2901,6 +2989,34 @@
       .dest-grid.pac-expanded .donut-detail-window.visible .tooltip-subcard {
         padding: 6px 10px !important;
         gap: 2px !important;
+      }
+
+      .dest-grid.pac-expanded #window-content-bonds,
+      .dest-grid.pac-expanded #window-content-commodities {
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .dest-grid.pac-expanded .donut-window-bonds-inner,
+      .dest-grid.pac-expanded .donut-window-commodities-inner {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .dest-grid.pac-expanded .donut-window-bonds-inner .tooltip-subcard,
+      .dest-grid.pac-expanded .donut-window-commodities-inner .tooltip-subcard {
+        flex: 0 0 auto !important;
+        height: auto !important;
+        min-height: 65px !important;
+        max-height: none !important;
+      }
+
+      .dest-grid.pac-expanded .donut-window-bonds-inner>.pac-section-total,
+      .dest-grid.pac-expanded .donut-window-commodities-inner>.pac-section-total {
+        margin-top: auto;
       }
     }
 
@@ -3170,6 +3286,14 @@
     <!-- ═══ DESTINATION CARDS ═══ -->
     <div class="dest-grid">
 
+      <!-- ── MOBILE CONNECTOR 1: STIPENDIO -> CONTO CORRENTE (~770 €) ── -->
+      <div class="mobile-flow-connector mobile-flow-connector--cyan" aria-hidden="true">
+        <div class="mobile-connector-line"></div>
+        <div class="flow-oval-node badge-cyan mobile-flow-badge">~770 €</div>
+        <div class="mobile-connector-line"></div>
+        <div class="mobile-connector-arrow"></div>
+      </div>
+
       <!-- ── CARD 1: CONTO ISYBANK ── -->
       <div class="glass-box card card--isybank">
         <!-- Glassmorphism Overlay (Click anywhere on it to close) -->
@@ -3212,6 +3336,14 @@
             <span>Quando Usarli?</span>
           </button>
         </div>
+      </div>
+
+      <!-- ── MOBILE CONNECTOR 2: CONTO CORRENTE -> FONDO EMERGENZA (700 €) ── -->
+      <div class="mobile-flow-connector mobile-flow-connector--purple" aria-hidden="true">
+        <div class="mobile-connector-line"></div>
+        <div class="flow-oval-node badge-purple mobile-flow-badge">700 €</div>
+        <div class="mobile-connector-line"></div>
+        <div class="mobile-connector-arrow"></div>
       </div>
 
       <!-- ── CARD 2: FONDO EMERGENZA ── -->
@@ -3266,6 +3398,14 @@
             <span>Quando Usarli?</span>
           </button>
         </div>
+      </div>
+
+      <!-- ── MOBILE CONNECTOR 3: FONDO EMERGENZA -> INVESTIMENTI (500 €) ── -->
+      <div class="mobile-flow-connector mobile-flow-connector--emerald" aria-hidden="true">
+        <div class="mobile-connector-line"></div>
+        <div class="flow-oval-node badge-emerald mobile-flow-badge">500 €</div>
+        <div class="mobile-connector-line"></div>
+        <div class="mobile-connector-arrow"></div>
       </div>
 
       <!-- ── CARD 3: PAC (3D FLIP CARD) ── -->
@@ -3347,38 +3487,38 @@
                       <!-- Background Track -->
                       <circle cx="120" cy="120" r="82" class="donut-track" />
 
-                      <!-- 75% Azionario (Starts at 11:00, sweeps 270° to 8:00) -->
+                      <!-- 80% Azionario (Starts at 11:00, sweeps 288° to 8:36) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-equity" role="button" tabindex="0"
-                        aria-label="Azioni, 75 per cento" aria-controls="donut-detail-window" aria-expanded="false"
-                        stroke-dasharray="386.42 515.22" stroke-dashoffset="0" data-segment="equity" />
+                        aria-label="Azioni, 80 per cento" aria-controls="donut-detail-window" aria-expanded="false"
+                        stroke-dasharray="412.18 515.22" stroke-dashoffset="0" data-segment="equity" />
 
-                      <!-- 15% Obbligazioni (Starts at 8:00, sweeps 54° to 9:48) -->
+                      <!-- 15% Obbligazioni (Starts at 8:36, sweeps 54° to 10:24) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-bonds" role="button" tabindex="0"
                         aria-label="Obbligazioni, 15 per cento" aria-controls="donut-detail-window"
-                        aria-expanded="false" stroke-dasharray="77.28 515.22" stroke-dashoffset="-386.42"
+                        aria-expanded="false" stroke-dasharray="77.28 515.22" stroke-dashoffset="-412.18"
                         data-segment="bonds" />
 
-                      <!-- 10% Materie prime (Starts at 9:48, sweeps 36° to 11:00) -->
+                      <!-- 5% Materie prime (Starts at 10:24, sweeps 18° to 11:00) -->
                       <circle cx="120" cy="120" r="82" class="donut-segment segment-commodities" role="button"
-                        tabindex="0" aria-label="Materie prime, 10 per cento" aria-controls="donut-detail-window"
-                        aria-expanded="false" stroke-dasharray="51.52 515.22" stroke-dashoffset="-463.70"
+                        tabindex="0" aria-label="Materie prime, 5 per cento" aria-controls="donut-detail-window"
+                        aria-expanded="false" stroke-dasharray="25.76 515.22" stroke-dashoffset="-489.46"
                         data-segment="commodities" />
                     </g>
 
                     <!-- Labels and Percentages inside their respective sections -->
-                    <!-- 75% Azioni (midpoint: 15° / right side) -->
-                    <text x="200" y="131" class="donut-pct-name" style="font-size: 8.5px;">Azioni</text>
-                    <text x="197" y="149" class="donut-pct-label" style="font-size: 13.5px;">75<tspan
+                    <!-- 80% Azioni (midpoint: 24° / right side) -->
+                    <text x="196" y="140" class="donut-pct-name" style="font-size: 10px;">Azioni</text>
+                    <text x="194" y="158" class="donut-pct-label" style="font-size: 15px;">80<tspan
                         class="donut-pct-symbol">%</tspan></text>
 
-                    <!-- 15% Obbligazioni (midpoint: 177° / mid-left) -->
-                    <text x="38" y="115" class="donut-pct-name" style="font-size: 7px;">Obbligaz.</text>
-                    <text x="39" y="132" class="donut-pct-label" style="font-size: 12px;">15<tspan
+                    <!-- 15% Obbligazioni (midpoint: 195° / mid-left) -->
+                    <text x="40" y="92" class="donut-pct-name" style="font-size: 8.5px;">Obbligaz.</text>
+                    <text x="41" y="109" class="donut-pct-label" style="font-size: 13.5px;">15<tspan
                         class="donut-pct-symbol">%</tspan></text>
 
-                    <!-- 10% Commodities (midpoint: 222° / top-left) -->
-                    <text x="61" y="58" class="donut-pct-name" style="font-size: 6.8px;">Commodit.</text>
-                    <text x="57" y="72" class="donut-pct-label" style="font-size: 11.5px;">10<tspan
+                    <!-- 5% Commodities (midpoint: 231° / top-left) -->
+                    <text x="66.5" y="49" class="donut-pct-name" style="font-size: 7.2px;">Comm.</text>
+                    <text x="66.5" y="63" class="donut-pct-label" style="font-size: 12px;">5<tspan
                         class="donut-pct-symbol">%</tspan></text>
                   </svg>
 
@@ -3468,11 +3608,11 @@
                         <span class="donut-window-title" id="window-title">Azionario</span>
                       </div>
                     </div>
-                    <span class="donut-window-pct" id="window-pct">75%</span>
+                    <span class="donut-window-pct" id="window-pct">80%</span>
                   </div>
-                  <div class="donut-window-desc" id="window-desc">Alti rendimenti ma alta volatilità</div>
+                  <div class="donut-window-desc" id="window-desc">Alti rendimenti, alta volatilità</div>
 
-                  <!-- Content for 75% Azionario (4 subcards) -->
+                  <!-- Content for 80% Azionario (4 subcards) -->
                   <div class="donut-window-section-content" id="window-content-equity">
                     <div class="donut-window-equity-inner">
                       <div class="donut-tooltip-subcards" id="tooltip-subcards">
@@ -3494,7 +3634,7 @@
                           </div>
                           <div class="subcard-row subcard-row--bottom">
                             <span class="pac-subcard-caption">Già Investiti</span>
-                            <span class="pac-subcard-val" style="color: #cbd5e1;">2000 €</span>
+                            <span class="pac-subcard-val" style="color: #cbd5e1;">2.000 €</span>
                           </div>
                         </div>
 
@@ -3506,7 +3646,7 @@
                           </div>
                           <div class="subcard-row subcard-row--bottom">
                             <span class="pac-subcard-caption">Già Investiti</span>
-                            <span class="pac-subcard-val" style="color: #cbd5e1;">1000 €</span>
+                            <span class="pac-subcard-val" style="color: #cbd5e1;">1.000 €</span>
                           </div>
                         </div>
                       </div>
@@ -3638,6 +3778,8 @@
       if (grid) {
         grid.classList.add('pac-expanded');
       }
+      document.documentElement.classList.add('pac-modal-open');
+      document.body.classList.add('pac-modal-open');
       inner?.querySelector('.card-flip-back')?.focus({ preventScroll: true });
       animateConnector();
     }
@@ -3663,6 +3805,8 @@
       if (grid) {
         grid.classList.remove('pac-expanded');
       }
+      document.documentElement.classList.remove('pac-modal-open');
+      document.body.classList.remove('pac-modal-open');
       hideDetailWindow();
       if (wasFlipped && flipControl && matchMedia('(max-width: 960px)').matches) {
         flipControl.scrollIntoView({ block: 'nearest', behavior: 'auto' });
@@ -3827,7 +3971,7 @@
     const segmentData = {
       equity: {
         title: 'Azionario',
-        pct: '75%',
+        pct: '80%',
         color: '#00d4ff',
         desc: 'Alti rendimenti, alta volatilità'
       },
@@ -3839,7 +3983,7 @@
       },
       commodities: {
         title: 'Materie Prime',
-        pct: '10%',
+        pct: '5%',
         color: '#ffb800',
         desc: 'Protezione dall\'inflazione e decorrelazione'
       }

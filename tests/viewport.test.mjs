@@ -160,6 +160,24 @@ try {
           detailVisible: getComputedStyle(detail).visibility === 'visible',
           detailLeft: rect.left, detailRight: rect.right, detailTop: rect.top,
           detailBottom: rect.bottom,
+          segmentChecks: (() => {
+            const checks = {};
+            for (const seg of ['bonds', 'commodities']) {
+              document.querySelector('.donut-segment[data-segment="' + seg + '"]')
+                .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+              const target = document.getElementById('window-content-' + seg);
+              const inner = target.querySelector('.donut-window-' + seg + '-inner');
+              const total = inner.querySelector('.pac-section-total');
+              const totalRect = total.getBoundingClientRect();
+              const detailRect = detail.getBoundingClientRect();
+              const paddingBottom = parseFloat(getComputedStyle(detail).paddingBottom);
+              checks[seg] = {
+                fits: detail.scrollHeight <= detail.clientHeight + 1,
+                totalAtBottom: Math.abs(detailRect.bottom - totalRect.bottom - paddingBottom) <= 4,
+              };
+            }
+            return checks;
+          })(),
         };
         back.querySelector('.pac-col-title').click();
         const frontRect = document.querySelector('.pac-clickable-body').getBoundingClientRect();
@@ -189,6 +207,10 @@ try {
       result.detailTop >= 0 && result.detailBottom <= height,
       `${width}px detail is outside the viewport`);
     assert.ok(result.frontVisibleAfterClose, `${width}px closed investment card is out of view`);
+    assert.ok(result.segmentChecks.bonds.fits, `${width}px bonds detail does not fit`);
+    assert.ok(result.segmentChecks.bonds.totalAtBottom, `${width}px bonds total is not at bottom`);
+    assert.ok(result.segmentChecks.commodities.fits, `${width}px commodities detail does not fit`);
+    assert.ok(result.segmentChecks.commodities.totalAtBottom, `${width}px commodities total is not at bottom`);
     if (width === 1280 && height === 800) {
       await send('Runtime.evaluate', { expression: 'openPacModal()' });
       await pause(700);

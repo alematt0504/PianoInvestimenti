@@ -102,9 +102,10 @@ function runAt(width, height) {
     const closedScroll = grid.scrollTop;
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     check(grid.scrollTop === closedScroll, 'Escape moves cards while investment card is closed');
-    check(document.documentElement.scrollHeight <= innerHeight, 'document is vertically scrollable');
-    if (innerWidth < 961) {
-      check(grid.scrollHeight > grid.clientHeight, 'mobile cards have no internal scroll area');
+    if (innerWidth >= 961) {
+      check(document.documentElement.scrollHeight <= innerHeight, 'desktop dashboard is vertically scrollable');
+    } else {
+      check(document.documentElement.scrollHeight > innerHeight, 'mobile document is vertically scrollable with salary card');
     }
     } catch (error) { errors.push('uncaught: ' + error.stack); }
     document.body.insertAdjacentHTML('beforeend', '<pre id="test-results">' + JSON.stringify({ width: innerWidth, height: innerHeight, errors }) + '</pre>');
